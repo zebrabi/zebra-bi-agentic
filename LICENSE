@@ -1,0 +1,98 @@
+Zebra BI Agent Skills Licence
+Licence version 1.0, public preview, September 2026
+
+Copyright (c) 2026 ZEBRA BI informacijske rešitve d.d., Pot za Brdom 104, 1000 Ljubljana,
+Slovenia ("Zebra BI"). All rights reserved.
+
+This software and the accompanying documentation ("the Materials") are made available by
+Zebra BI on the terms below. By installing or using the Materials you accept them.
+
+1. WHAT YOU MAY DO
+
+   You may install the Materials, run them, and use them with AI agents and models to create
+   Power BI reports, including reports you use commercially. Reports you create with the
+   Materials are yours.
+
+   You may make copies of the Materials for backup and for use within your own organisation.
+
+   You may fork the GitHub repository containing the Materials, and modify your fork, for the
+   sole purpose of proposing a contribution under Section 5.
+
+2. WHAT YOU MAY NOT DO
+
+   a) No derivative works. You may not modify, adapt, translate, or create works derived from
+      the Materials, and you may not redistribute them, whether modified or not, except as
+      Sections 1 and 5 allow.
+
+   b) No training. You may not use the Materials, in whole or in part, as data to train,
+      fine-tune, or otherwise develop any machine-learning model, language model, or dataset
+      intended for that purpose. This applies to the documentation as much as to the code.
+      Running the Materials with an AI agent or model to create reports is use under
+      Section 1, not training.
+
+   c) No reverse engineering of the Zebra BI visuals, and no attempt to circumvent the
+      licensing of any Zebra BI product.
+
+   d) No removal of this licence, of the copyright notice, or of any attribution in the
+      Materials.
+
+3. THE ZEBRA BI VISUALS ARE LICENSED SEPARATELY
+
+   The Materials help you author reports that use Zebra BI custom visuals. They do not grant any
+   licence to those visuals. Rendering a Zebra BI visual requires a valid Zebra BI licence on the
+   machine that renders it, under the Zebra BI End-User Licence Agreement at
+   https://zebrabi.com/legal/. A free trial is available at https://zebrabi.com.
+
+4. PREVIEW
+
+   The Materials are made available as a public preview. Zebra BI may change the Materials and
+   these terms between versions; the terms that accompany a version govern that version. Zebra
+   BI has no obligation to provide support, updates, or service levels for the Materials.
+
+   Preview status applies to the Materials, not to the reports you create with them. Section 1
+   applies to those reports in full.
+
+5. CONTRIBUTIONS
+
+   If you submit a contribution to the Materials (code, documentation, or other content,
+   whether by pull request, issue, or any other means), you confirm that it is your own work or
+   that you have the right to submit it, and you grant Zebra BI a perpetual, worldwide,
+   royalty-free, irrevocable licence to use, modify, sublicense, and distribute it as part of
+   the Materials under this licence or any later terms Zebra BI applies to the Materials. You
+   keep the copyright in your contribution.
+
+6. FEEDBACK
+
+   If you give Zebra BI feedback about the Materials, such as a bug report, a suggestion, or a
+   report that came out wrong, Zebra BI may use it without restriction and without any
+   obligation to you. Do not include licence keys, customer data, or personal data in feedback
+   posted publicly; send those to support@zebrabi.com.
+
+7. NO WARRANTY
+
+   THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+   PURPOSE AND NONINFRINGEMENT.
+
+   The Materials read and write Power BI project files. You are responsible for keeping backups
+   and for checking that a generated report is correct before relying on it. The Materials
+   include checks that read files; they cannot tell you whether a number is right.
+
+8. NO LIABILITY
+
+   IN NO EVENT SHALL ZEBRA BI BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+   MATERIALS OR THEIR USE.
+
+9. TERMINATION
+
+   This licence ends automatically if you breach any of its terms. On termination you must stop
+   using the Materials and delete your copies. Reports you have already created are unaffected.
+
+10. GOVERNING LAW AND JURISDICTION
+
+   This licence is governed by the laws of the Republic of Slovenia, without reference to its
+   conflict of laws principles and excluding the UN Convention on Contracts for the International
+   Sale of Goods. The Slovenian courts have exclusive jurisdiction.
+
+Questions: support@zebrabi.com

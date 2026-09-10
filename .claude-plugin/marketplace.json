@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "zebra-bi-collection",
+  "owner": {
+    "name": "Zebra BI",
+    "email": "support@zebrabi.com"
+  },
+  "description": "Zebra BI agent skills. Author production Zebra BI reports in Power BI from the terminal.",
+  "plugins": [
+    {
+      "name": "zebra-bi",
+      "source": "./plugins/zebra-bi",
+      "description": "Plan, author and verify Zebra BI reports (Charts, Tables, Cards) in a Power BI PBIP project. Point it at a modelled .pbip and it writes the report layer, binds the visuals, applies IBCS semantics and verifies the result against Power BI Desktop.",
+      "author": {
+        "name": "Zebra BI",
+        "email": "support@zebrabi.com"
+      },
+      "category": "productivity",
+      "homepage": "https://zebrabi.com",
+      "tags": [
+        "power-bi",
+        "zebra-bi",
+        "pbip",
+        "pbir",
+        "ibcs",
+        "report-authoring",
+        "variance",
+        "small-multiples",
+        "charts",
+        "tables",
+        "cards"
+      ]
+    }
+  ]
+}

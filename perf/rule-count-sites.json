@@ -1,0 +1,102 @@
+{
+  "note": "Every place in prose that states how many rules the checker has. rules.json is the source of truth; these are the copies. They drifted to 24 while rules.json carried 31 and nothing noticed for over a week -- see AGENTS.md, gate A9. A pin that matches NOTHING is a failure, not a pass: a detector that reads nothing and a repository with nothing wrong produce the same green tick.",
+  "sweep": {
+    "why": "The pins only find what someone remembered to pin. The sweep is the net for a NEW count that appears in prose without being registered here. It was calibrated against the real corpus: two or three digit numbers within 40 characters of rule/check/checker/catalogue, in markdown only.",
+    "files": [
+      "CHANGELOG.md",
+      "README.md",
+      "AGENTS.md",
+      "plugins/zebra-bi/skills/setup-doctor/SKILL.md",
+      "plugins/zebra-bi/skills/report-authoring/SKILL.md",
+      "plugins/zebra-bi/skills/report-authoring/references/formatting.md",
+      "plugins/zebra-bi/skills/report-authoring/references/model-layer.md",
+      "plugins/zebra-bi/skills/report-authoring/references/preflight.md",
+      "plugins/zebra-bi/skills/report-authoring/references/recipes.md",
+      "plugins/zebra-bi/skills/report-authoring/references/visuals.md"
+    ],
+    "noun": "\\b(rules?|checks?|checkers?|catalogue)\\b",
+    "window": 40
+  },
+  "pins": [
+    {
+      "id": "readme-what-is-included",
+      "file": "README.md",
+      "pattern": "reports faults before you open it: (\\d+) of them",
+      "why": "The 'What is included' table. Escapes a naive grep for 'N rules' entirely -- the noun is nine words away -- which is exactly why it is pinned by sentence rather than found by pattern."
+    },
+    {
+      "id": "readme-about-the-checker",
+      "file": "README.md",
+      "pattern": "get (\\d+) checks that catch",
+      "why": "The 'About the checker' section named in AGENTS.md as one of the three sites that must be updated when the count moves."
+    },
+    {
+      "id": "setup-doctor-example-output",
+      "file": "plugins/zebra-bi/skills/setup-doctor/SKILL.md",
+      "pattern": "Zebra validator\\s+pass\\s+(\\d+) rules",
+      "why": "The worked example of doctor output. The prose two sections above it already tells the agent to report the number the tool returns rather than this one, but the example is still a stated count and it is still read as one."
+    },
+    {
+      "id": "changelog-what-you-get",
+      "file": "CHANGELOG.md",
+      "pattern": "\\| \\*\\*The checker\\*\\* \\| (\\d+) rules over an unopened",
+      "why": "The 'What you get' table in the release section. It stated 57 while rules.json carried 59, and it was invisible because CHANGELOG.md was not in the sweep -- the same drift class the gate was built for, in the one file a customer reads first."
+    }
+  ],
+  "exemptions": [
+    {
+      "file": "AGENTS.md",
+      "contains": "measure it against the 20 shipped templates",
+      "why": "The size of the template corpus a new rule is measured against. Not the rule catalogue."
+    },
+    {
+      "file": "AGENTS.md",
+      "contains": "run the rule over all 20",
+      "why": "Same template corpus."
+    },
+    {
+      "file": "AGENTS.md",
+      "contains": "because 21 of the then-22 rules live in the held",
+      "why": "Historical: the catalogue size at the time the render_pointer defect shipped. Frozen on purpose -- updating it would destroy the account."
+    },
+    {
+      "file": "AGENTS.md",
+      "contains": "The rule count was **24** in all three prose sites",
+      "why": "The narrative of the exact drift this gate exists to prevent. Both numbers in it are history. If a future count is 32, this sentence still correctly says 24 and 31."
+    },
+    {
+      "file": "plugins/zebra-bi/skills/report-authoring/SKILL.md",
+      "contains": "15 vessels + *Other vessels*",
+      "why": "Row count in a worked Top-N example."
+    },
+    {
+      "file": "plugins/zebra-bi/skills/report-authoring/references/recipes.md",
+      "contains": "(The title moved from `y=16 h=40` to `y=8 h=56`",
+      "why": "Pixel geometry that happens to sit next to the word 'rule'."
+    },
+    {
+      "file": "AGENTS.md",
+      "contains": "read 24 while `rules.json` carried 31",
+      "why": "The historical drift itself, quoted as the reason the gate exists. Two dead numbers, deliberately frozen -- updating them to today's count would destroy the point of the sentence."
+    },
+    {
+      "file": "AGENTS.md",
+      "contains": "three sites read 24",
+      "why": "Same sentence, the other half. A record of what went wrong, not a claim about the catalogue."
+    },
+    {
+      "file": "CHANGELOG.md",
+      "contains": "Seven rules retired or gated after they fired on shipped reference templates",
+      "why": "A count of rules RETIRED in 0.2.6-0.2.13, not the catalogue size. Frozen: it is a record of what happened in those versions."
+    },
+    {
+      "file": "CHANGELOG.md",
+      "contains": "The doctor's model check tests evaluation rather than presence; rule messages carry the symptom",
+      "why": "The version label 0.2.15 sits next to the word 'rule'. Not a count at all."
+    }
+  ],
+  "known_gaps": [
+    "A THIRD prose site lives in the generator's own repository, which is private, so no check here can reach it. It is the one copy of the count that is still unguarded.",
+    "Two code sites assert a lower bound rather than a count: .github/workflows/checks.yml ('at least 20') and plugins/zebra-bi/mcp/test-real-project.js ('the catalogue is down to N'). A floor does not go stale, so they are deliberately out of scope for this gate."
+  ]
+}

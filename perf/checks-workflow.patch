@@ -1,0 +1,56 @@
+diff --git a/.github/workflows/checks.yml b/.github/workflows/checks.yml
+index ffe6b07..3e86173 100644
+--- a/.github/workflows/checks.yml
++++ b/.github/workflows/checks.yml
+@@ -52,7 +52,7 @@ jobs:
+         run: |
+           set -u
+           failed=0
+-          for t in test-checkers.js test-encoders.js test-tmdl.js test-server.js test-real-project.js; do
++          for t in test-checkers.js test-encoders.js test-tmdl.js test-server.js test-writers.js test-profile.js test-real-project.js; do
+             echo "──────── $t"
+             node "$t" || failed=1
+           done
+@@ -110,3 +110,42 @@ jobs:
+             }
+             console.log(`zebra-bi ${m.version}`);
+           '
++
++  budgets:
++    name: context budget and stated counts
++    runs-on: ubuntu-latest
++
++    # The retention half of the performance work. A skill body's size and a stated rule count are
++    # both properties that are won once and lost silently — nobody ever means to add 2,000 tokens
++    # to a file that loads on every session, and nobody meant to leave "24 rules" in three places
++    # for over a week while `rules.json` carried 31. Neither shows up in a test, a render or a
++    # review diff read one hunk at a time. So they are gates.
++    #
++    # Data lives in `perf/`, logic in `.github/scripts/`. Lowering a budget is a one-line edit to
++    # the JSON; raising one is also a one-line edit, which is the design — it cannot happen by
++    # accident, only in a diff someone reviews.
++    #
++    # One node version rather than the 20/22 matrix the suites use. These read files and compare
++    # numbers; they exercise no runtime behaviour that could differ between LTS releases, and
++    # `checkers.js` — the one product file loaded here — is already covered on both by `suites`.
++    #
++    # NO `paths:` FILTER, deliberately. A perf gate is exactly the kind of job somebody scopes to
++    # the files it watches, and then it does not run on the pull request that renames one. This
++    # repository has already had a suite skip silently for eight days inside a green run.
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: '22'
++
++      # All three, then one exit code, so a reviewer sees every number in one log rather than only
++      # the first thing that broke.
++      - name: run every gate
++        run: |
++          set -u
++          failed=0
++          for g in check-context-budget.js check-rule-count.js check-rule-implementations.js; do
++            echo "──────── $g"
++            node ".github/scripts/$g" || failed=1
++          done
++          exit $failed

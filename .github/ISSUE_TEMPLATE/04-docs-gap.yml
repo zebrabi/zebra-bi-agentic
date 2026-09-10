@@ -1,0 +1,27 @@
+name: Something I had to work out for myself
+description: An instruction that was missing, wrong, or pointed at something that does not exist.
+labels: ["docs"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The skill is meant to be executable from what it ships. If it told you to run something you
+        do not have, or assumed a step it never described, that is a defect and not your fault.
+  - type: textarea
+    id: where
+    attributes:
+      label: Where were you, and what did it say?
+      description: The skill or file, and the instruction as written.
+    validations: { required: true }
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What did you have to work out?
+      description: What you did instead, and how long it cost you.
+    validations: { required: true }
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Plugin version, Power BI Desktop version, Zebra BI visual version.
+      placeholder: zebra-bi 0.2.14 · Desktop 2.156.951.0 · Zebra BI Tables 7.x

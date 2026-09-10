@@ -1,0 +1,42 @@
+name: A warning about something that was actually correct
+description: The checker reported a fault on a report that was fine.
+labels: ["false-positive"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A checker that cries wolf is worse than no checker: people learn to skip the output, and
+        then it misses the real one. We have retired rules for exactly this, so please do report it.
+  - type: input
+    id: rule
+    attributes:
+      label: Which rule fired?
+      description: The rule id from the output, e.g. `tmdl-unquoted-name-with-space`.
+    validations: { required: true }
+  - type: textarea
+    id: output
+    attributes:
+      label: The full finding
+      description: Paste the whole entry, including the location it named.
+      render: text
+    validations: { required: true }
+  - type: textarea
+    id: why-correct
+    attributes:
+      label: Why is the report actually correct?
+      description: >-
+        The strongest evidence is that it opens and renders. Say whether Power BI Desktop opened
+        the project, and whether the visual it named rendered properly.
+    validations: { required: true }
+  - type: textarea
+    id: snippet
+    attributes:
+      label: The lines it pointed at
+      description: The few lines of TMDL or JSON at that location. Redact anything confidential.
+      render: text
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Plugin version, Power BI Desktop version, Zebra BI visual version.
+      placeholder: zebra-bi 0.2.14 · Desktop 2.156.951.0 · Zebra BI Tables 7.x

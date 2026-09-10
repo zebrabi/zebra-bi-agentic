@@ -1,0 +1,25 @@
+# This repository is published. Anything that lands here is public and permanent, so the
+# ignores below are about accidents rather than tidiness.
+
+# Never: a customer's or our own report. Saving a report in Power BI Desktop writes the licence key
+# into each Zebra visual.json that has rendered, so a stray project directory leaks it.
+*.pbip
+*.pbix
+*.Report/
+*.SemanticModel/
+.pbi/
+
+# Session and tooling artefacts from the harness that generates this bundle.
+.zbi-reports/
+.zbi/
+
+# Node, in case the MCP server ever gains dependencies.
+node_modules/
+npm-debug.log*
+*.tgz
+
+# macOS and editors
+.DS_Store
+.idea/
+.vscode/
+*.swp

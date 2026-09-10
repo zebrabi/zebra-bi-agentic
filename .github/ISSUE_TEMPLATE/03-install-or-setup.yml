@@ -1,0 +1,46 @@
+name: It would not install, or setup-doctor reports a problem
+description: The plugin will not install, will not update, or the doctor finds something you cannot fix.
+labels: ["install"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An install nobody can complete is the most expensive failure there is, so this is worth
+        filing even if you found a way round it. Say what you tried.
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Where did it stop?
+      options:
+        - "`/plugin marketplace add` — adding the marketplace"
+        - "`/plugin install` — installing the plugin"
+        - "`/plugin update` — updating an existing install"
+        - "The skills installed but did not load"
+        - "`/zebra-bi:setup-doctor` reported something I cannot fix"
+        - "The MCP tools are missing (validate_report and the encoders)"
+    validations: { required: true }
+  - type: textarea
+    id: error
+    attributes:
+      label: The exact error
+      description: Copy the message verbatim — the wording is usually what identifies the cause.
+      render: text
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes:
+      label: setup-doctor output
+      description: If you got far enough to run `/zebra-bi:setup-doctor`, paste all of it.
+      render: text
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: Windows 11 · Claude Code 2.x · Node 22 (or "no Node") · Power BI Desktop 2.156
+    validations: { required: true }
+  - type: checkboxes
+    id: node
+    attributes:
+      label: Node
+      options:
+        - label: I have Node installed and `node --version` works in the same terminal

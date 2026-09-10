@@ -1,0 +1,477 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "dax-var-named-after-a-function",
+      "severity": "blank",
+      "check": "dax-var-must-not-be-named-after-a-function",
+      "message": "Some DAX names are reserved and cannot be used as a variable name. The failure is the generic\n*\"The syntax for 'X' is incorrect\"* \u2014 it never says \"reserved\". The collision is exact-match and\ncase-insensitive, so adding a noun to the name clears it. The model still **opens**; the damage is\non the page, where every visual touching the measure shows *\"Something's wrong with one or more\nfields\"* and loses its other fields with it.",
+      "source": "dax.md",
+      "held": false
+    },
+    {
+      "id": "native-anti-pattern-visual",
+      "severity": "looks-fine",
+      "check": "native-visual-type-is-an-anti-pattern",
+      "message": "A pie, donut, gauge, funnel, treemap, KPI-light or filled map draws a quantity as an angle, an area or\na colour, which a reader compares far less accurately than a length; replace it with a Zebra Table\nwith bars for a share or a ranking, a variance chart against the target where a gauge was, bars by\nstage where a funnel was, and bars by region instead of a coloured map.",
+      "source": "design.md",
+      "held": false
+    },
+    {
+      "id": "table-row-height-below-legible",
+      "severity": "looks-fine",
+      "check": "table-fixed-row-height-must-stay-legible",
+      "message": "Keep a table's fixed row height at 16 pixels or more. Under that the data labels and the in-cell\nbars share the same pixels: every row is present and none of them can be read, so the table looks\nfull rather than broken.",
+      "source": "design.md",
+      "held": false
+    },
+    {
+      "id": "numeric-enum-written-as-word",
+      "severity": "looks-fine",
+      "check": "numeric-enum-must-not-be-quoted",
+      "message": "A setting whose values are numbers must be written as a number (`3D`), not as text (`'3'`). Text is\nnot a declared value for it, so the visual keeps its default with no error \u2014 for a chart type, that\nmeans the default chart instead of the one you chose.",
+      "source": "formatting.md",
+      "held": false
+    },
+    {
+      "id": "colour-gate",
+      "severity": "looks-fine",
+      "check": "colour-property-requires-style-custom",
+      "message": "**Set `style` to Custom (`4`) on any visual whose colour properties you write.** Authored colours\napply only under the Custom style; under any other value the visual renders in that style's own\npalette, with none of the authored colours, and no error says so.",
+      "source": "formatting.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-bom",
+      "severity": "wont-open",
+      "check": "tmdl-file-must-not-have-a-bom",
+      "message": "A TMDL file must be UTF-8 with **no** byte-order mark. One BOM makes Power BI Desktop reject the\nwhole semantic model, not just that file, and the message names an encoding problem rather than the\nfile you last edited.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-double-slash-comment",
+      "severity": "wont-open",
+      "check": "tmdl-comment-must-use-triple-slash",
+      "message": "Outside a measure's expression, a line starting with `//` is not a comment in TMDL and the model\nfails to load with *\"Parsing error type - InvalidLineType \u2014 Unexpected line type: Other!\"* naming\nthe line. Use `///`, which is a description attached to the object on the next line.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-description-on-relationship",
+      "severity": "wont-open",
+      "check": "tmdl-relationship-takes-no-description",
+      "message": "A relationship takes no `///` description. One attached to a `relationship` block fails the model\nload. The same line is correct and useful on a measure, a column or a table.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-measure-column-name-collision",
+      "severity": "wont-open",
+      "check": "measure-and-column-must-not-share-a-name",
+      "message": "Within one table a measure and a column cannot share a name. Desktop refuses the model with *\"The\n'Sales' measure cannot be created because a column with the same name already exists.\"* The same\nname in two **different** tables is fine.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-reserved-table-name-measures",
+      "severity": "wont-open",
+      "check": "measure-holder-table-must-not-be-named-measures",
+      "message": "A table named exactly `Measures` fails the whole model load with `ModelSchemaValidationFailed:\nUnsupported Table name \"Measures\"`. Name your measure-holder table something else \u2014 `.Measures`\nworks, and the leading dot also sorts it first in the Data pane.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "dax-unquoted-calculations-table",
+      "severity": "blank",
+      "check": "dax-calculations-table-must-be-quoted",
+      "message": "`Calculations` is a reserved word in DAX. A table with that name loads fine, but **every unquoted\nreference to it in an expression fails** \u2014 `Calculations[x]` and `COUNTROWS(Calculations)` both give\n*\"The syntax for 'Calculations' is incorrect\"*, a message that sends you looking at your brackets.\nSingle-quote it (`'Calculations'[x]`) or, better, name the measure-holder table something else.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-description-property",
+      "severity": "wont-open",
+      "check": "tmdl-description-is-not-a-property",
+      "message": "TMDL has no `description:` property. A line like `description: Revenue actuals` under a measure,\ncolumn or table fails the model load with *\"Unsupported property - description is not a supported\nproperty in the current context!\"*. Descriptions are written as a `///` line **above** the object.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-unquoted-name-with-space",
+      "severity": "wont-open",
+      "check": "tmdl-name-with-a-space-must-be-quoted",
+      "message": "An object name containing a space must be single-quoted: `table 'Financial Data'`, not `table\nFinancial Data`. Unquoted, TMDL reads the second word as the start of the body and reports an\n**indentation** error on a line whose indentation is correct \u2014 so the message sends you to the\nwrong place. Applies to every declaration: `table`, `column`, `measure`, `partition`, `hierarchy`.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-reserved-table-name-goal",
+      "severity": "blank",
+      "check": "table-must-not-be-named-goal",
+      "message": "A table named `Goal` loads without complaint and then breaks every visual bound to it: each renders\n*\"Something's wrong with one or more fields\"* while the table itself looks perfectly healthy in the\nData pane. Rename it \u2014 `Goals` or `Target` both work.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "calculated-column-relationship-binding",
+      "severity": "wont-open",
+      "check": "calculated-table-column-must-bind-by-inferred-name",
+      "message": "On a calculated (`DATATABLE`) table, a column binds to the DAX output through **`isNameInferred` and\na bracketed `sourceColumn: [K]`**. Written the imported-table way \u2014 `sourceColumn: K` \u2014 the column\ndoes not bind, and any **relationship** onto it fails the entire model at cold open with\n*\"Relationship 'X' uses an invalid column ID 17.\"* The message names the relationship, so the\nrelationship is what gets rewritten; the relationship is correct and the **column** is the fault.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "dax-removefilters-as-table-expression",
+      "severity": "blank",
+      "check": "dax-removefilters-must-be-a-calculate-filter",
+      "message": "\u2620\ufe0f **`REMOVEFILTERS` is a CALCULATE filter, never a table.** Put it anywhere a TABLE is expected \u2014\n`RANKX(REMOVEFILTERS(T), \u2026)`, an iterator's first argument, or the right-hand side of a `VAR` \u2014 and\nthe measure fails with *\"REMOVEFILTERS function cannot be used as a table expression. It can appear\nonly as a filter in CALCULATE\"*. Where you need a table, write **`ALL(Table)`**, which clears the\nwhole table and is the table-valued equivalent. Inline `REMOVEFILTERS` in each\n`CALCULATE`/`CALCULATETABLE` instead. **On the page it reads as *\"Something's wrong with one or more\nfields\"* on a grey card, and it takes the WHOLE visual down** \u2014 every other field in it, however\ncorrect, disappears with it.",
+      "source": "model-layer.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-unquoted-dot-name",
+      "severity": "looks-fine",
+      "check": "tmdl-name-with-a-dot-must-be-quoted",
+      "message": "An unquoted name containing a dot loads under the **wrong name**: `measure AC.v2 = [AC]` creates a\nmeasure called `v2`, read back from the engine, and every report binding to `AC.v2` then fails to\nresolve while the model reports no error. Quote it: `measure 'AC.v2'`.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-unknown-property",
+      "severity": "wont-open",
+      "check": "tmdl-property-must-exist-on-its-object",
+      "message": "A property name TMDL does not know on that object stops the model loading: *\"The keyword 'isHiden'\nis neither a property nor an object in the current context!\"* A typo and an invented property look\nthe same to the parser. `discourageReportMeasures` is a real Tabular Object Model property that\nDesktop's TMDL reader still refuses; the other model flags load.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-enum-value-invalid",
+      "severity": "wont-open",
+      "check": "tmdl-enum-property-must-use-a-legal-value",
+      "message": "An enum property must use a legal member: `summarizeBy: total` and `dataType: integer` fail with\n*\"Failed to convert the value 'total' to the expected type AggregateFunction!\"*. Write `sum`,\n`int64`, `dateTime`, `double`, `decimal`, `boolean`, `string`. Casing is free; spelling is not.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-duplicate-property",
+      "severity": "wont-open",
+      "check": "tmdl-property-declared-once-per-object",
+      "message": "A property may appear once per object. A second `dataType:` on the same column fails with\n*\"Duplicated property - dataType appears more then once in the current context!\"*. Only\n`associatedColumn`, `column` (in a calendar group) and `groupByColumn` repeat.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-measure-expression-swallowed",
+      "severity": "blank",
+      "check": "measure-must-have-an-expression",
+      "message": "A multi-line body written at **property depth** swallows the property after it: `[AC] * 2` on one\nline and `formatString: #,##0` on the next, both two tabs in, load as one expression and the engine\nholds the measure in error state 5, *\"The syntax for 'formatString' is incorrect\"*. `measure X =`\nwith nothing under it does the same to whatever line follows. Indent the body one level deeper than\nthe properties. Every visual bound to such a measure renders an error.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-description-gap",
+      "severity": "wont-open",
+      "check": "tmdl-description-must-touch-its-object",
+      "message": "A `///` description must sit directly above its object. A blank line between them fails the model\nwith *\"Unexpected line type: Empty!\"* at the blank line; a description with nothing after it fails\ntoo. The same reader refuses a ``` fence that is never closed \u2014 it swallows the rest of the file.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-database-line-missing",
+      "severity": "wont-open",
+      "check": "tmdl-database-file-must-declare-database",
+      "message": "`database.tmdl` must start with the `database` line, with or without a name. A file holding only\n`compatibilityLevel: 1606` fails with *\"Unexpected line type: Property!\"*.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-feature-below-compat",
+      "severity": "wont-open",
+      "check": "tmdl-feature-needs-compatibility-level",
+      "message": "An object above the model's compatibility level fails the load: a `function` on a 1606 model gives\n*\"The database compatibility level of 1606 is below the minimal compatability level of 1702 needed\nfor [model Model].[function AddTax]\"*. A `calendar` object additionally needs the *Enhanced DAX Time\nIntelligence* preview switched on in Desktop; without it the model is refused outright: *\"The model\ncontains a custom calendar. This feature is not supported.\"*",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-duplicate-object",
+      "severity": "wont-open",
+      "check": "tmdl-object-declared-once-per-parent",
+      "message": "A measure, column, hierarchy or partition may be declared once per table, whether in one file or\nacross files: a second `measure AC` fails with *\"TMDL objects cannot be merged because both declare\nthe same property: expression\"*, and the message names both files. Splitting a table over files is\nlegal; repeating a child is not.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-format-string-and-definition",
+      "severity": "wont-open",
+      "check": "measure-must-not-carry-both-formatstring-and-definition",
+      "message": "A measure takes `formatString` **or** `formatStringDefinition`, never both: *\"The Measure\n'Sales'['AC auto'] has both FormatString property and FormatStringDefinition property defined which\nis not supported scenario.\"*",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-relationship-endpoint-unresolved",
+      "severity": "wont-open",
+      "check": "tmdl-relationship-endpoints-must-resolve",
+      "message": "Both ends of a relationship must name a table and a column the model declares, as `Table.Column`.\nA stale name fails the whole project: *\"Cannot resolve all the paths while de-serializing Database.\nProperty ToColumn of object \"relationship X\" refers to an object which cannot be found\"*. The DAX\nbracket form `Calendar[Date]` fails the same way. Renaming a table or column and forgetting the\nrelationship is the single most common way to hit this.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-security-filter-needs-both-directions",
+      "severity": "wont-open",
+      "check": "securityfiltering-both-requires-crossfiltering-both",
+      "message": "`securityFilteringBehavior: bothDirections` is only legal on a relationship whose\n`crossFilteringBehavior` is also `bothDirections`: *\"cannot have SecurityFilterBehavior set to\nBothDirections when the CrossFilterBehavior is set to OneDirection.\"*",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-calc-group-needs-discourage-implicit",
+      "severity": "wont-open",
+      "check": "calculation-group-requires-discourageimplicitmeasures",
+      "message": "A calculation group needs `discourageImplicitMeasures` on the model, as a bare line in\n`model.tmdl`: *\"The Model 'Model' property DiscourageImplicitMeasures must be set to true in order\nto create any calculation groups.\"* Desktop sets it for you in the UI; a hand-written model must.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "tmdl-duplicate-lineagetag",
+      "severity": "wont-open",
+      "check": "tmdl-lineagetag-must-be-unique",
+      "message": "Two objects in one collection may not share a `lineageTag`: *\"An object with lineage-tag\n'11111111-\u2026' already exists in the collection.\"* Tags are optional \u2014 leave them out rather than copy\none \u2014 and a tag that is not a GUID loads.",
+      "source": "tmdl.md",
+      "held": false
+    },
+    {
+      "id": "view-mode-storage-on-certified-visual",
+      "severity": "looks-fine",
+      "check": "view-mode-storage-config-requires-plus-visual",
+      "message": "A view-mode comments link (`annotationLayerSettings.annotationsStorageConfig`) belongs on Tables+ or\nCharts+, the visuals that carry the viewer comment panel. On the certified Tables and Charts the\nproperty has no effect, so a link written there looks configured while viewers get no comment panel\nand can add nothing. Switch the visual to its Plus twin, or drop the link and carry the commentary in\nthe authored comment layer.",
+      "source": "visuals.md",
+      "held": false
+    },
+    {
+      "id": "view-mode-storage-with-comment-box-off",
+      "severity": "looks-fine",
+      "check": "view-mode-storage-config-requires-comment-box",
+      "message": "A view-mode comments link needs the comment panel on: `commentBoxSettings.show` must not be `false` on\nthe same visual. With the panel off, existing comments still mark their data points and show on hover,\nbut the panel is where a viewer writes a new one, so the link is set up for a conversation nobody can\nstart. Leave `show` unset or set it to `true`.",
+      "source": "visuals.md",
+      "held": false
+    },
+    {
+      "id": "action-button-label-needs-state-selector",
+      "severity": "blank",
+      "check": "action-button-text-has-state-selector",
+      "message": "An `actionButton`'s `text` object is an **array of state-scoped entries**, and the label value must\nsit in an entry carrying a `selector` \u2014 normally `{\"id\": \"default\"}`. A selector-less entry carries\nonly state-independent properties such as `show`, so a label placed there renders nothing: the button\ncomes out as a bare coloured rectangle, with no text and no error. The state ids are `default`,\n`hover`, `selected` and `disabled`.",
+      "source": "visuals.md",
+      "held": false
+    },
+    {
+      "id": "tooltip-page-schema-too-old-for-type",
+      "severity": "looks-fine",
+      "check": "tooltip-page-must-declare-page-schema-2-0-0-or-later",
+      "message": "A tooltip page needs a top-level `\"type\": \"Tooltip\"` in its `page.json`, and that property **does not\nexist before page schema `2.0.0`**. Older schemas also declare `additionalProperties: false`, so on\n`1.0.0` the property cannot be written at all \u2014 and a page carrying only `pageBinding` is accepted\nwithout any error and then never opens on hover. Bump the `$schema` to `2.0.0` or later **and** set\n`type`.",
+      "source": "visuals.md",
+      "held": false
+    },
+    {
+      "id": "visual-property-at-the-json-root",
+      "severity": "wont-open",
+      "check": "visual-json-root-must-not-carry-a-property-that-belongs-inside-visual",
+      "message": "\u26a0\ufe0f **`visualContainerObjects` goes INSIDE `visual`**, as a sibling of `visualType` / `query` /\n`objects` \u2014 never at the `visual.json` root. The root holds only the container's own keys (`$schema`,\n`name`, `position`, `filterConfig`, `visual`, \u2026). Put a `visual` member at the root and **Desktop\nrefuses to open the report at all**, naming the property and the file. The same applies to\n`visualType`, `query`, `objects` and `drillFilterOtherVisuals`: at the root each is a will-not-open\nfault, and it is worth catching from the text on disk rather than from a 75-second launch.",
+      "source": "visuals.md",
+      "held": false
+    },
+    {
+      "id": "page-filter-hardcodes-the-period",
+      "severity": "looks-fine",
+      "check": "page-filter-on-a-time-column-with-no-slicer-for-it",
+      "message": "A page pinned to one period by a page filter, with no slicer for that field, can only ever show that\nperiod \u2014 the reader cannot move. Put the period on a slicer and let them choose.",
+      "source": "SKILL.md",
+      "held": false
+    },
+    {
+      "id": "data-role-exceeds-declared-maximum",
+      "severity": "blank",
+      "check": "role-projection-count-within-visual-maximum",
+      "message": "This visual has more fields in a role than the visual accepts, so it renders an error message\ninstead of a chart. Cards takes one field in Values and splits into tiles by Group; Charts takes\ntwo in Values. Move the extra fields to another visual, or split by Group instead.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "slicer-filter-double-nested",
+      "severity": "wrong-numbers",
+      "check": "slicer-selection-must-be-nested-twice",
+      "message": "A slicer's saved selection sits one level deeper than it looks, a `filter` inside a `filter`.\nWrite it at the outer level and the page ignores the selection and totals every period at once.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "filterconfig-entry-needs-name",
+      "severity": "wont-open",
+      "check": "filterconfig-entry-requires-name",
+      "message": "The `Filters` role and a visual's `filterConfig` are different things. The role takes measures;\n`filterConfig` takes filter objects, and every one needs a `name`. An entry without one stops the\nreport opening.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "interaction-target-missing",
+      "severity": "wont-open",
+      "check": "interaction-target-must-exist",
+      "message": "An interaction that names a visual or a page which is not on disk crashes Power BI Desktop when\nthe report opens. Write interactions last, once everything they name exists.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "nested-settings-need-full-key-set",
+      "severity": "blank",
+      "check": "nested-settings-object-requires-every-key",
+      "message": "Write every key of a nested settings object, using an empty string for a value you want empty.\nInside these objects an absent key is not read as the default: leave `backgroundFill`, `textColor`\nor `markerStyle` out of a column's chart view and the chart cells render solid black.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "property-declared-but-inert",
+      "severity": "looks-fine",
+      "check": "property-accepts-value-and-does-nothing",
+      "message": "Leave `chartLayout` (every value except `Waterfall`), `compactCards` and `useCustomScenarioColors`\nunset. Each accepts a value without affecting the render, so writing one records an intention the\nvisual does not carry out; choose the chart form with `chartType`, and set scenario colours\ndirectly under `style = Custom` (`4`).",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "table-sort-field-not-shown",
+      "severity": "blank",
+      "check": "table-sort-field-must-be-projected",
+      "message": "A table's sort has to name a field that table already shows. Sort by anything else and the whole\ntable renders empty, with no error.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "percent-measure-double-scaled",
+      "severity": "wrong-numbers",
+      "check": "percent-units-on-percent-formatted-measure",
+      "message": "Bind a plain, unformatted measure when a Zebra Table shows it with percent units. The units\nsetting multiplies by a hundred on top of the measure's own format string, so a measure already\nformatted as a percent renders a hundred times too large.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "textbox-too-short-for-font",
+      "severity": "looks-fine",
+      "check": "textbox-height-below-font-floor",
+      "message": "A textbox shorter than its font needs clips the text rather than wrapping or shrinking, and the\nfirst thing to go is the bottom of the letters. The measured floor is the font size in points times\n1.45, plus 12, rounded up: 26 px at 9 pt, 30 at 12 pt, 36 at 16 pt, 44 at 22 pt.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "slicer-height-clips-the-dropdown",
+      "severity": "looks-fine",
+      "check": "slicer-height-must-clear-its-header",
+      "message": "A dropdown slicer showing its header needs about 52 pixels of height. Below that the dropdown itself\nis cut off at the bottom while the header label still reads, so the slicer looks unfinished rather\nthan broken. The header shows unless it is explicitly turned off, so a box sized for a header-less\nslicer clips as soon as the header is left alone.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "table-ignores-sort-definition",
+      "severity": "looks-fine",
+      "check": "table-uses-its-own-sort-object",
+      "message": "A Zebra Table's row order comes from its own `sortSettings` (`columnName`, `categorySort`,\n`chartSort`), not from the standard `sortDefinition`; write the table's own setting, and keep\n`sortDefinition` for Charts, which do read it. A table given only the standard one renders in\nvalue order rather than the order you asked for.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "file-starts-with-bom",
+      "severity": "wont-open",
+      "check": "no-byte-order-mark-in-report-files",
+      "message": "A byte order mark at the start of any report file makes Power BI Desktop reject the whole project,\nnot just that file. Write files as UTF-8 without one.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "dataset-path-does-not-resolve",
+      "severity": "blank",
+      "check": "dataset-reference-path-must-resolve",
+      "message": "If the dataset path in the project file points at a folder that is not there, Desktop opens an\nempty report called Untitled and explains nothing. Renaming or moving a folder is the usual cause.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "visual-object-not-an-array",
+      "severity": "wont-open",
+      "check": "visual-object-entry-must-be-an-array",
+      "message": "Every entry under a visual's `objects` is a list holding one item, not a bare object. Write it as a\nbare object and Desktop reports a type error and refuses to open the report.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "multiline-measure-dax-on-equals-line",
+      "severity": "wont-open",
+      "check": "multiline-measure-must-not-start-dax-on-the-equals-line",
+      "message": "A measure whose DAX runs over several lines must begin it on the line **after** the `=`, indented.\nStarting it on the `=` line makes the parser read only that fragment as the expression: the model\nloads with zero tables and Desktop opens an empty report called Untitled.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "report-missing-version-json",
+      "severity": "wont-open",
+      "check": "report-definition-requires-version-json",
+      "message": "A PBIR report needs `definition/version.json`. Without it Desktop refuses the project, opens an\nempty report called Untitled and shows an \"Issues were found\" dialog reading *Cannot find file\n'version.json'*. The file is two fields: the `versionMetadata` schema and `\"version\": \"2.0.0\"`.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "report-has-no-base-theme",
+      "severity": "blank",
+      "check": "report-requires-a-base-theme",
+      "message": "A report with no base theme renders nothing at all: no visuals, no page tabs, and no error saying\nwhy. Every report needs one declared.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "cards-size-written-into-data",
+      "severity": "looks-fine",
+      "check": "cards-sizing-not-settable-in-card-data",
+      "message": "Size cards with `cardsInRow` and the container height, not with a size written into the card\ndata. Cards size themselves from their content and their container, so a size in the data has no\neffect on the render.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "comment-filtercontexts-key",
+      "severity": "blank",
+      "check": "annotation-comment-requires-filtercontexts-key",
+      "message": "Every comment needs a `filterContexts` key. Without it the whole visual renders empty, with no\nerror. An empty list is fine; a missing key is not.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "computed-row-in-grand-total",
+      "severity": "wrong-numbers",
+      "check": "computed-row-must-be-excluded-from-total",
+      "message": "Exclude a computed row from the grand total explicitly; without the exclusion it is added into the\ntotal, which then renders in bold, looks entirely right, and is inflated by whatever that row\ncontains.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "in-cell-chart-switch-is-a-number",
+      "severity": "looks-fine",
+      "check": "column-settings-showastable-is-an-enum",
+      "message": "Inside column settings, write the in-cell chart switch as a number, not as `true` or `false`. A\nboolean is not a declared value for it, so the bars you asked for never appear and nothing\nreports why.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "title-token-broken-after-save",
+      "severity": "looks-fine",
+      "check": "title-token-broken-by-save-bookkeeping",
+      "message": "After Power BI Desktop saves a report, a measure token in a title renders as its literal text\ninstead of the value. Two of the entries Desktop adds cause it, `version` and `previewSettings`.\nRemove those two and open the report cold to confirm.",
+      "source": "validator",
+      "held": true
+    },
+    {
+      "id": "pbip-schema-wrong",
+      "severity": "wont-open",
+      "check": "pbip-schema-must-match-published-pattern",
+      "message": "A wrong or guessed schema line in the project file makes Desktop open an empty report called\nUntitled with an error dialog. It has to match the published pattern exactly.",
+      "source": "validator",
+      "held": true
+    }
+  ]
+}

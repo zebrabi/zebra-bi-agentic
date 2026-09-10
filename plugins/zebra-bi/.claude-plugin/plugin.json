@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "zebra-bi",
+  "displayName": "Zebra BI",
+  "description": "Author production Zebra BI reports in Power BI from the terminal. Give it a modelled .pbip and it plans the page, writes the PBIR report layer, binds Charts, Tables and Cards, applies IBCS variance semantics, and verifies the result against Power BI Desktop.",
+  "version": "0.3.0",
+  "author": {
+    "name": "Zebra BI",
+    "email": "support@zebrabi.com"
+  },
+  "homepage": "https://zebrabi.com",
+  "repository": "https://github.com/zebrabi/zebra-bi-agentic",
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": [
+    "power-bi",
+    "zebra-bi",
+    "pbip",
+    "pbir",
+    "ibcs",
+    "report-authoring",
+    "variance-chart",
+    "small-multiples",
+    "waterfall",
+    "data-visualization"
+  ],
+  "mcpServers": {
+    "zebra-bi": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/mcp/server.js"
+      ]
+    }
+  }
+}

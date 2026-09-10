@@ -1,0 +1,52 @@
+name: The report came out wrong and the checker said it was fine
+description: A page that renders but is incorrect. This is the report we care about most.
+labels: ["wrong-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most valuable report you can file. The checker reads files, not data, so a
+        report can validate clean and still be wrong — and every one of those we hear about
+        becomes a rule that catches the next one.
+
+        **Before you attach anything:** saving in Power BI Desktop writes your Zebra BI licence
+        key into the report. Strip it or send a screenshot instead. Never paste a key here.
+  - type: textarea
+    id: what-was-wrong
+    attributes:
+      label: What was wrong on the page?
+      description: The number, the column, the colour, the missing comparison — whatever you saw.
+      placeholder: The variance column was empty on every row, but the page looked finished.
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should it have shown, and how do you know?
+      description: The figure from your own model, a spreadsheet, last month's deck — whatever your source of truth is.
+    validations: { required: true }
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: A screenshot of the page
+      description: This tells us more than any log. Drag the image in.
+    validations: { required: true }
+  - type: textarea
+    id: validator
+    attributes:
+      label: What did the checker say?
+      description: Paste the output of `validate_report`, or say if you do not have Node installed.
+      render: text
+  - type: textarea
+    id: model
+    attributes:
+      label: Your model, roughly
+      description: >-
+        Do you have per-scenario measures (Actual/Plan/Previous Year) or a single Scenario column?
+        Is a date table marked? Where do your actuals stop, and where does the comparison stop?
+    validations: { required: true }
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Plugin version, Power BI Desktop version, Zebra BI visual version.
+      placeholder: zebra-bi 0.2.14 · Desktop 2.156.951.0 · Zebra BI Tables 7.x

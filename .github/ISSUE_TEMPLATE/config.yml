@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Licence, account or billing
+    url: mailto:support@zebrabi.com
+    about: Anything about your Zebra BI licence or subscription. Never post a licence key in a public issue.
+  - name: Something you cannot post publicly
+    url: mailto:support@zebrabi.com
+    about: A report or data you would rather not attach to a public issue. Email it instead.
+  - name: Zebra BI product documentation
+    url: https://zebrabi.com/guide/
+    about: How the visuals themselves work, independently of this plugin.

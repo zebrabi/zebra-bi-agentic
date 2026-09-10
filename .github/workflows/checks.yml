@@ -1,0 +1,179 @@
+name: checks
+
+# Runs on every push and pull request, because until now nothing ran at all: `main` had no
+# protection, five identities could push straight to it, and every guard this project has lived
+# on whichever laptop happened to run the build.
+#
+# WHAT THIS CANNOT DO, stated up front so nobody reads it as more than it is. The disclosure
+# checks — no internal path, no held-file prose, no held rule's sentence in the public text —
+# live in the generator, which lives in a private repository, and the list they check against
+# NAMES THE THINGS IT PROTECTS. Publishing that list here would be the leak it exists to prevent.
+# So this workflow cannot re-check the boundary. What it can do is prove the shipped bundle is
+# byte-for-byte what a boundary-checked build produced, which turns a hand-edit from a silent
+# leak into a failed build.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  suites:
+    name: test suites (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 20 and 22 rather than one version: the README tells a customer Node is "a free
+        # download", so the suites have to pass on the LTS a customer plausibly already has,
+        # not only on whatever the author installed.
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # No install step and no lockfile, deliberately: the MCP server is dependency-free so that
+      # it can run on a locked-down enterprise machine. If this ever needs `npm ci`, that claim
+      # has stopped being true and the failure here is the warning.
+      # Two exact paths were checked, so a package.json one directory over, a committed
+      # node_modules/ or a bare lockfile all sailed through. Search instead.
+      - name: no dependencies crept in
+        run: |
+          found=$(find . -path ./.git -prune -o \
+                    \( -name package.json -o -name package-lock.json -o -name pnpm-lock.yaml \
+                       -o -name yarn.lock -o -name node_modules \) -print | head -20)
+          if [ -n "$found" ]; then
+            echo "A dependency artefact appeared. The server is meant to be dependency-free — see AGENTS.md."
+            echo "$found"
+            exit 1
+          fi
+
+      # Globbed, not listed. A hand-maintained list has the same blind spot the bundle job counts
+      # files to close: it verifies what it was told about, so a new test-*.js would never run.
+      # The floor keeps a broken glob from passing as "no tests to run".
+      - name: run every suite
+        working-directory: plugins/zebra-bi/mcp
+        run: |
+          set -u
+          shopt -s nullglob
+          suites=(test-*.js)
+          if [ "${#suites[@]}" -lt 7 ]; then
+            echo "Only ${#suites[@]} suite(s) matched test-*.js — expected at least 7."
+            exit 1
+          fi
+          failed=0
+          for t in "${suites[@]}"; do
+            echo "──────── $t"
+            node "$t" || failed=1
+          done
+          exit $failed
+        shell: bash
+
+  bundle:
+    name: the shipped skill is generated output
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The skill under plugins/zebra-bi/skills/report-authoring/ is EMITTED by the generator in
+      # the private hub. Editing it directly is the failure mode this catches: the next build
+      # silently reverts the edit, so the work looks landed and is not — and worse, an edit that
+      # never went through the build never went through the disclosure checks either.
+      - name: bundle matches its checksums
+        working-directory: plugins/zebra-bi/skills/report-authoring
+        run: sha256sum -c .bundle-sha256
+
+      # `sha256sum -c` verifies the files it is told about. It says nothing about a file that was
+      # ADDED, which would sail through — so count as well as verify.
+      - name: no file was added to the bundle
+        working-directory: plugins/zebra-bi/skills/report-authoring
+        run: |
+          listed=$(wc -l < .bundle-sha256)
+          actual=$(find . -type f ! -name '.bundle-sha256' | wc -l)
+          if [ "$listed" -ne "$actual" ]; then
+            echo "$actual file(s) in the bundle, $listed in .bundle-sha256."
+            echo "A file was added or removed without a build. Re-run the generator."
+            find . -type f ! -name '.bundle-sha256' | sort
+            exit 1
+          fi
+
+      - name: the rule catalogue parses and is non-empty
+        run: |
+          node -e '
+            const r = require("./plugins/zebra-bi/skills/report-authoring/rules.json");
+            if (!Array.isArray(r.rules) || r.rules.length < 20) {
+              throw new Error(`rule catalogue is ${r.rules?.length} rules — expected at least 20`);
+            }
+            for (const rule of r.rules) {
+              for (const f of ["id", "severity", "check", "message"]) {
+                if (!rule[f]) throw new Error(`rule ${rule.id ?? "?"} is missing ${f}`);
+              }
+            }
+            console.log(`${r.rules.length} rules, all fields present`);
+          '
+
+      - name: the plugin manifest parses and carries a version
+        run: |
+          node -e '
+            const m = require("./plugins/zebra-bi/.claude-plugin/plugin.json");
+            if (!/^\d+\.\d+\.\d+$/.test(m.version ?? "")) {
+              throw new Error(`plugin version is ${JSON.stringify(m.version)}`);
+            }
+            console.log(`zebra-bi ${m.version}`);
+          '
+
+  budgets:
+    name: context budget, stated counts, public surface
+    runs-on: ubuntu-latest
+
+    # The retention half of the performance work. A skill body's size and a stated rule count are
+    # both properties that are won once and lost silently — nobody ever means to add 2,000 tokens
+    # to a file that loads on every session, and nobody meant to leave "24 rules" in three places
+    # for over a week while `rules.json` carried 31. Neither shows up in a test, a render or a
+    # review diff read one hunk at a time. So they are gates.
+    #
+    # Data lives in `perf/`, logic in `.github/scripts/`. Lowering a budget is a one-line edit to
+    # the JSON; raising one is also a one-line edit, which is the design — it cannot happen by
+    # accident, only in a diff someone reviews.
+    #
+    # One node version rather than the 20/22 matrix the suites use. These read files and compare
+    # numbers; they exercise no runtime behaviour that could differ between LTS releases, and
+    # `checkers.js` — the one product file loaded here — is already covered on both by `suites`.
+    #
+    # NO `paths:` FILTER, deliberately. A perf gate is exactly the kind of job somebody scopes to
+    # the files it watches, and then it does not run on the pull request that renames one. This
+    # repository has already had a suite skip silently for eight days inside a green run.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # All three, then one exit code, so a reviewer sees every number in one log rather than only
+      # the first thing that broke.
+      # The gate that reads the AUTHORED half runs its own fixtures first. It is the newest of the
+      # four and the only one whose fault it can plant, so proving it still fails on demand costs a
+      # second and stops it decaying into a green line nobody has tested.
+      - name: the public-surface gate can still fail
+        run: node .github/scripts/check-public-surface.js --self-test
+
+      # Same reasoning, newer gate. It is the only check that decodes a driveId rather than reading
+      # it, which is how three real tenant GUIDs sat in mcp/ through a disclosure pass, so proving it
+      # still fails on demand matters more here than for the others.
+      - name: the tenant-identifier gate can still fail
+        run: node .github/scripts/check-no-tenant-identifiers.js --self-test
+
+      - name: run every gate
+        run: |
+          set -u
+          failed=0
+          for g in check-context-budget.js check-rule-count.js check-rule-implementations.js check-public-surface.js check-no-tenant-identifiers.js; do
+            echo "──────── $g"
+            node ".github/scripts/$g" || failed=1
+          done
+          exit $failed
