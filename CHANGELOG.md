@@ -7,7 +7,7 @@ This file starts at the first public release. Versions before it exist in the gi
 never published — the repository was private, with no tags and no releases — so listing them as
 though they shipped would misrepresent what anyone could have installed.
 
-## 0.3.1 (LANDING-DATE)
+## 0.3.1 (2026-10-07)
 
 Documentation and safety wording. No change to the MCP server or the rule catalogue.
 
@@ -21,6 +21,10 @@ Documentation and safety wording. No change to the MCP server or the rule catalo
   step.
 - The README says your agent host sends what the agent reads to your model provider, that a pasted
   key stays in the conversation, and asks you to work on a copy outside synced folders.
+- Node.js is a requirement in the README and `INSTALL.md`. The checker is no longer described as
+  optional.
+- The README is titled with the product name, Zebra BI agentic, and says the checker reads files
+  while the agent checks the rendered page in Power BI Desktop.
 
 ## 0.3.0 — 2026-09-10, the first public release
 

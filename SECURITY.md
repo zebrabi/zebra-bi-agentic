@@ -68,9 +68,10 @@ generated, and the checks that decide what ships run in the generator. CI here c
 shipped bundle matches the checksums committed beside it in `.bundle-sha256`, and that no file was
 added to it. That catches a hand-edit made without a matching checksum update. It cannot show that
 the bundle came from the generator: the checksum file lives in this repository, so one commit can
-change a skill file and its checksum together and still pass. What stands between such a commit and
-`main` is review, since every change needs an approval from someone other than its author. CI also
-cannot re-run the boundary checks themselves. This is stated in `AGENTS.md` as well. If you find
+change a skill file and its checksum together and still pass. Review is the intended control for
+such a commit: a change to `main` needs an approval from someone other than its author, which
+repository administrators can override. CI also cannot re-run the boundary checks themselves.
+This is stated in `AGENTS.md` as well. If you find
 internal material in the published bundle, that **is** a defect worth reporting. Email us rather
 than filing it publicly.
 

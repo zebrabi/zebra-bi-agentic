@@ -4,9 +4,9 @@
 other agents, machines without git, private-preview access, and what to do when the install does
 not take.
 
-**Before anything here works you still need Windows with Power BI Desktop and a Zebra BI licence
-on the machine.** Those are in the README under *Before you start* and no install route changes
-them.
+**Before anything here works you still need Windows with Power BI Desktop, Node.js and a Zebra BI
+licence on the machine.** Those are in the README under *Before you start* and no install route
+changes them.
 
 ## Which route is yours
 
@@ -47,7 +47,7 @@ copilot plugin install zebra-bi@zebra-bi-collection
 
 Then start Copilot and ask for the skill by name: *"use the setup-doctor skill"*. Copilot lists
 the three skills under `copilot skill list`. The MCP checker is not registered by this route;
-add it with `copilot mcp add` using the `node … mcp/server.js` command from route 2, or skip it.
+add it with `copilot mcp add` using the `node … mcp/server.js` command from route 2.
 
 **What is verified:** both commands complete and all three skills load (Copilot CLI 1.0.83,
 2026-09-06). **What is not:** a report authored end to end on Copilot — the account we tested with
@@ -56,7 +56,7 @@ If your organisation allows it, you are further than we are; tell us what happen
 
 ## 2. The skills folder (any other agent)
 
-Two halves, and the first one is enough to be useful.
+Two halves. You need both.
 
 **Half one — the skills.** Copy the three skill folders into the open-standard location your agent
 reads. Codex and GitHub Copilot CLI both read `~/.agents/skills`; other hosts vary, and your host's
@@ -80,7 +80,7 @@ Copy-Item -Recurse -Force .\plugins\zebra-bi\skills\* $HOME\.agents\skills\
 That gives you `report-authoring`, `report-publishing` and `setup-doctor`. The agent reads them the
 way Claude Code does.
 
-**Half two — the checker.** Optional, and it needs [Node.js](https://nodejs.org). The MCP server is
+**Half two — the checker.** It needs [Node.js](https://nodejs.org). The MCP server is
 a single stdio process with **no dependencies and nothing to install** — there is no `package.json`
 in this repository and no `npm install` step:
 
@@ -194,7 +194,7 @@ or, on any other host, *"run the setup-doctor skill"*.
 The doctor is the install test. It reports Power BI Desktop, your project, the visuals, your
 licence, your model and what it can verify — and it tells you **which product you are running**,
 with the checker or without. If it names the checker as absent and you configured it, the MCP
-registration did not take; that is the thing to fix, and everything else still works meanwhile.
+registration did not take; that is the thing to fix before your first report.
 
 If the doctor itself will not start, the skills did not land. Check the files are where you put
 them and that you restarted the agent.

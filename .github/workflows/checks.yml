@@ -12,7 +12,7 @@ name: checks
 # matches the checksums committed beside it and that no file was added, which turns a hand-edit
 # that skips the checksum update from a silent leak into a failed build. It cannot prove the bundle
 # came from the generator: the checksum file lives in this repository and one commit can change
-# both. Review is the control for that.
+# both. Review is the intended control for that.
 
 on:
   push:
