@@ -8,9 +8,11 @@ name: checks
 # checks — no internal path, no held-file prose, no held rule's sentence in the public text —
 # live in the generator, which lives in a private repository, and the list they check against
 # NAMES THE THINGS IT PROTECTS. Publishing that list here would be the leak it exists to prevent.
-# So this workflow cannot re-check the boundary. What it can do is prove the shipped bundle is
-# byte-for-byte what a boundary-checked build produced, which turns a hand-edit from a silent
-# leak into a failed build.
+# So this workflow cannot re-check the boundary. What it can do is check that the shipped bundle
+# matches the checksums committed beside it and that no file was added, which turns a hand-edit
+# that skips the checksum update from a silent leak into a failed build. It cannot prove the bundle
+# came from the generator: the checksum file lives in this repository and one commit can change
+# both. Review is the intended control for that.
 
 on:
   push:

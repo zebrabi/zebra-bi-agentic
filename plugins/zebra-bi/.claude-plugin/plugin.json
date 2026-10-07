@@ -3,7 +3,7 @@
   "name": "zebra-bi",
   "displayName": "Zebra BI",
   "description": "Author production Zebra BI reports in Power BI from the terminal. Give it a modelled .pbip and it plans the page, writes the PBIR report layer, binds Charts, Tables and Cards, applies IBCS variance semantics, and verifies the result against Power BI Desktop.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": {
     "name": "Zebra BI",
     "email": "support@zebrabi.com"

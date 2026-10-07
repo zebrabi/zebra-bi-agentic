@@ -1,4 +1,4 @@
-# Zebra BI for Claude
+# Zebra BI agentic
 
 Describe the report you want. Get a Power BI report built with Zebra BI visuals.
 
@@ -25,7 +25,7 @@ actually answer, picks the visuals for that, and tells you what it left out and 
 
 ## Before you start
 
-Four things, and the second and third catch most people out.
+Five things, and the second and third catch most people out.
 
 **1. Windows, with Power BI Desktop installed.** Zebra BI visuals render in Power BI Desktop, and
 there is no way around that. On a Mac it can write the files but cannot show you the result, so in
@@ -35,7 +35,9 @@ practice this is a Windows tool.
 them. If you do not have one:
 **https://zebrabi.com/pro-trial/power-bi/?utm_source=agent-skills&utm_medium=plugin&utm_campaign=readme**
 gives you a key in a couple of minutes. Paste the key into the chat and the agent activates the
-visuals from the report itself; there is nothing to type in Power BI Desktop.
+visuals from the report itself; there is nothing to type in Power BI Desktop. Pasting the key sends
+it to your model provider and keeps it in the conversation history, so use a trial key here if you
+can. See [`SECURITY.md`](SECURITY.md).
 
 **3. A data model that can show a variance.** This is the big one. Your model needs:
 
@@ -55,6 +57,10 @@ If your model is not there yet, it can write the measures and the date table for
 If that is unfamiliar territory, it is genuinely worth twenty minutes: install it once and you
 type requests in plain English from then on. Instructions at
 **https://claude.com/claude-code**.
+
+**5. Node.js.** A free download from **https://nodejs.org**. It runs the checker, which reads your
+report files for faults Power BI does not warn you about. Install it once; there is nothing to
+configure.
 
 ## Installing
 
@@ -94,6 +100,11 @@ Two of its checks are about your model, and they are the ones to pay attention t
 have scenario measures, and whether a date table is marked. If either fails, fix that first.
 Everything else about the report will look fine and be wrong.
 
+**Work on a copy.** The agent rewrites the report layer of the project you point it at, so give it a
+copy, never a live project, and keep that copy out of synced OneDrive or SharePoint folders. Once
+Power BI Desktop saves the report, your licence key is in its files, and sync uploads them to the
+cloud, where anyone the folder is shared with can open them.
+
 **Step two: ask for a report.**
 
 ```
@@ -117,7 +128,7 @@ before it builds instead of deciding for you.
 | **`/zebra-bi:setup-doctor`** | Checks this machine can do the job: Power BI Desktop, your project, the visuals, your licence, your model, and what it can verify. Ten checks, each with a fix. |
 | **`/zebra-bi:report-authoring`** | The authoring itself. Planning a page, binding data, variance semantics, formatting, small multiples, comments, and page layouts proven against real Zebra BI templates. |
 | **`/zebra-bi:report-publishing`** | The Zebra-specific parts of putting a finished report in a workspace. Microsoft's own skill does the upload; this covers the choice of visuals you have to make before you publish, and the refresh without which the report arrives empty. |
-| **The checker** | Reads your project and reports faults before you open it: 59 of them, each one a real problem we have hit and fixed. Optional, see below. |
+| **The checker** | Reads your project and reports faults before you open it: 59 of them, each one a real problem we have hit and fixed. Needs Node.js, see below. |
 
 ### About the checker
 
@@ -126,9 +137,8 @@ get 59 checks that catch things Power BI itself does not mention: a comment that
 visual, colours that will be silently ignored, a computed row that will quietly inflate your grand
 total, a sort that will make a table render empty.
 
-If you do not have Node, everything else works exactly the same and you simply do not get those
-checks. It is a smaller product, not a broken one, and the doctor will tell you which one you are
-running.
+Install Node before your first report. Without it the agent can still build and render a report,
+but none of those checks run. The doctor tells you whether the checker is running.
 
 ## What it cannot do
 
@@ -138,10 +148,15 @@ Worth knowing before you start, so nothing here surprises you later.
 can tell you a column is bound to the wrong field or a formatting rule will be ignored. It cannot
 tell you that revenue should be 4.2 million. Check the headline figures yourself.
 
-**It cannot see the rendered page.** Its checks read files. Some faults only appear on screen, so
-look at the report.
+**The checker cannot see the rendered page.** It reads files. The agent does look at the page: it
+opens the report in Power BI Desktop, takes a screenshot of each page and checks what it sees.
+Look at the report yourself as well.
 
 **It is Windows only in practice**, because Power BI Desktop is.
+
+**It cannot keep your data away from your model provider.** Your agent host sends what the agent
+reads, including your data and screenshots of the report, to the model provider you configured. See
+[`SECURITY.md`](SECURITY.md).
 
 **It cannot tell whether two periods are comparable.** If your actuals stop in April and last year
 runs to December, every variance on the page is wrong, and nothing in the files says so. The

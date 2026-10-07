@@ -28,6 +28,11 @@ hard-coded form layout. If the page has changed, fall back to opening the link.
 
 ## Activate from the file
 
+Before you ask for a key, tell the user that a key pasted into the chat stays in the conversation
+history and is sent to their model provider (the agent host's local history, plus whatever the
+provider keeps under its terms), and that a trial key is the better choice if they are only trying
+the plugin. Let them decide.
+
 When the user pastes their key into the chat, write it into **every** Zebra visual on the report and
 render once:
 
@@ -46,8 +51,10 @@ render once:
 On that render the visual reads the key, drops the Free footer, and stores the entitlement on the
 machine, so later reports on that machine need no key in their files.
 
-Then **strip the key out of the project** with the authoring skill's stripper. A key left in a
-`.pbip` travels with it and decodes, with no credential, to the customer's name, tier, seat count
-and renewal date. The machine stays entitled after the strip.
+Then **strip the key out of the project**: remove the `licenseSettings` object from every Zebra
+visual's `visual.json` and the `license` object from every Cards visual, then search the whole
+project for the key string and expect no match. A key left in a `.pbip` travels with it and decodes,
+with no credential, to the customer's name, tier, seat count and renewal date. The machine stays
+entitled after the strip.
 
 Never author a key the user did not give you, and never copy one from another report.

@@ -21,9 +21,10 @@ The practical consequence:
 | `plugins/zebra-bi/mcp/**` — the server, the checkers, the encoders | Yes, and this is where most useful contributions land |
 | `README.md`, `AGENTS.md`, `.github/**`, `perf/**` | Yes |
 
-`.bundle-sha256` and the `bundle` job in CI enforce the first row: an edit to generated output
-fails the build rather than shipping. That is deliberate. An edit that never went through the
-generator never went through its disclosure checks either.
+`.bundle-sha256` and the `bundle` job in CI back up the first row: an edit to generated output that
+does not also update the checksum fails the build. That is deliberate. An edit that never went
+through the generator never went through its disclosure checks either. An edit that updates the
+checksum as well passes CI, and only review can catch it.
 
 **If a shipped instruction is wrong, an issue is worth more than a patch.** It reaches the source,
 so the fix survives the next build — and it usually becomes a rule as well as a sentence.

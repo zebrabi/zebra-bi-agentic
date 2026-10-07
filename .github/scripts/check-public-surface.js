@@ -4,8 +4,9 @@
 // The authored half of this repository has never been checked by anything.
 //
 // The generated bundle under `plugins/zebra-bi/skills/report-authoring/` goes through the
-// generator's disclosure checks, and `.bundle-sha256` proves the shipped copy is what those checks
-// produced. Everything else -- README.md, AGENTS.md, CONTRIBUTING.md, SECURITY.md, perf/, mcp/,
+// generator's disclosure checks. `.bundle-sha256` catches a hand-edit to it that skips the checksum
+// update; it cannot prove provenance, because the checksum file lives in this tree and one commit
+// can change both. Everything else -- README.md, AGENTS.md, CONTRIBUTING.md, SECURITY.md, perf/, mcp/,
 // the workflow, the issue forms -- is written by hand straight into a public repository. AGENTS.md
 // has said so in its own gate-A9 procedure ("no build check has ever looked at them") and left it
 // as a thing a person is supposed to remember. This is that check.
@@ -54,7 +55,7 @@ const AUDIENCE = [
   { re: /\binternal use only\b/i, why: "this repository is not internal" },
   { re: /\bnot (yet )?(for|reviewed by) (public|legal)/i, why: "a public repository cannot ship an unreviewed statement of its own status" },
   { re: /\bearly release for .*\bcolleagues\b/i, why: "the audience is no longer colleagues" },
-  { re: /\bping (Luka|the team) (for|to get) access\b/i, why: "no access step exists any more" },
+  { re: /\bping (\w+|the team) (for|to get) access\b/i, why: "no access step exists any more" },
   { re: /\bnine org teams\b|\b56 (distinct )?people\b/i, why: "an access list is meaningless once public" },
   // Added 2026-09-05. Two classes that are not secrets and not about access, but about WHO IS
   // WRITING: the vendor speaking in the first person about its own catalogue, and a colleague's
