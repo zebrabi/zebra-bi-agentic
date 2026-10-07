@@ -21,8 +21,8 @@ Documentation and safety wording. No change to the MCP server or the rule catalo
   step.
 - The README says your agent host sends what the agent reads to your model provider, that a pasted
   key stays in the conversation, and asks you to work on a copy outside synced folders.
-- Node.js is a requirement in the README and `INSTALL.md`. The checker is no longer described as
-  optional.
+- Node.js is recommended in the README and `INSTALL.md`. It runs the checker; everything else works
+  without it, so a machine where IT blocks Node can still use the plugin.
 - The README is titled with the product name, Zebra BI agentic, and says the checker reads files
   while the agent checks the rendered page in Power BI Desktop.
 

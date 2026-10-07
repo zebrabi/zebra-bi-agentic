@@ -25,7 +25,7 @@ actually answer, picks the visuals for that, and tells you what it left out and 
 
 ## Before you start
 
-Five things, and the second and third catch most people out.
+Four things, and the second and third catch most people out. A fifth is recommended.
 
 **1. Windows, with Power BI Desktop installed.** Zebra BI visuals render in Power BI Desktop, and
 there is no way around that. On a Mac it can write the files but cannot show you the result, so in
@@ -58,9 +58,10 @@ If that is unfamiliar territory, it is genuinely worth twenty minutes: install i
 type requests in plain English from then on. Instructions at
 **https://claude.com/claude-code**.
 
-**5. Node.js.** A free download from **https://nodejs.org**. It runs the checker, which reads your
-report files for faults Power BI does not warn you about. Install it once; there is nothing to
-configure.
+**Recommended: Node.js.** A free download from **https://nodejs.org**. It runs the checker, which
+reads your report files for faults Power BI does not warn you about. If your IT team does not allow
+Node, skip it: the agent still builds the report and checks the rendered page, and you lose only
+the checker.
 
 ## Installing
 
@@ -128,7 +129,7 @@ before it builds instead of deciding for you.
 | **`/zebra-bi:setup-doctor`** | Checks this machine can do the job: Power BI Desktop, your project, the visuals, your licence, your model, and what it can verify. Ten checks, each with a fix. |
 | **`/zebra-bi:report-authoring`** | The authoring itself. Planning a page, binding data, variance semantics, formatting, small multiples, comments, and page layouts proven against real Zebra BI templates. |
 | **`/zebra-bi:report-publishing`** | The Zebra-specific parts of putting a finished report in a workspace. Microsoft's own skill does the upload; this covers the choice of visuals you have to make before you publish, and the refresh without which the report arrives empty. |
-| **The checker** | Reads your project and reports faults before you open it: 59 of them, each one a real problem we have hit and fixed. Needs Node.js, see below. |
+| **The checker** | Reads your project and reports faults before you open it: 59 of them, each one a real problem we have hit and fixed. Recommended; needs Node.js, see below. |
 
 ### About the checker
 
@@ -137,8 +138,9 @@ get 59 checks that catch things Power BI itself does not mention: a comment that
 visual, colours that will be silently ignored, a computed row that will quietly inflate your grand
 total, a sort that will make a table render empty.
 
-Install Node before your first report. Without it the agent can still build and render a report,
-but none of those checks run. The doctor tells you whether the checker is running.
+We recommend installing Node. If you cannot, for example because your IT team blocks it, everything
+else works the same and you simply do not get those checks. The doctor tells you whether the
+checker is running.
 
 ## What it cannot do
 
