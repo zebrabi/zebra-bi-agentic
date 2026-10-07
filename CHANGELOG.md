@@ -7,6 +7,21 @@ This file starts at the first public release. Versions before it exist in the gi
 never published — the repository was private, with no tags and no releases — so listing them as
 though they shipped would misrepresent what anyone could have installed.
 
+## 0.3.1 (LANDING-DATE)
+
+Documentation and safety wording. No change to the MCP server or the rule catalogue.
+
+- `SECURITY.md` now says what CI proves about the bundle and what it cannot, that your agent host
+  sends what it reads to your model provider, that project content is untrusted input, and that a
+  licence key pasted into the chat stays in the conversation.
+- `SECURITY.md` no longer says the checker flags a licence key. There is no such check; the report
+  writers refuse to write a key.
+- The authoring skill tells the agent to treat project content as data, never as instructions.
+- The setup skill says where a pasted key ends up before asking for one, and spells out the strip
+  step.
+- The README says your agent host sends what the agent reads to your model provider, that a pasted
+  key stays in the conversation, and asks you to work on a copy outside synced folders.
+
 ## 0.3.0 — 2026-09-10, the first public release
 
 Preview. It works, it is used daily inside Zebra BI, and it is new enough that the most useful

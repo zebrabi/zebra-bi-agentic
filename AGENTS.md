@@ -435,8 +435,9 @@ held-file prose, no held rule's sentence in the public text.
 
 Editing those files directly fails two ways at once. The next build silently reverts the edit, so
 the work looks landed and is not; and an edit that never went through the build never went through
-the disclosure checks either. `.bundle-sha256` and the `checks` workflow exist to turn that from a
-silent leak into a failed build.
+the disclosure checks either. `.bundle-sha256` and the `checks` workflow turn a hand-edit that
+skips the checksum update from a silent leak into a failed build. An edit that updates the checksum
+as well passes CI, and only review can catch it.
 
 If you need to change shipped prose, change the marked source and re-run the generator.
 
@@ -453,4 +454,6 @@ one other moment it matters.
 **The public CI cannot re-check the boundary**, and it is worth knowing why rather than assuming it
 does. The checks live in the generator, in a private repository, and the list they match against
 names the very things it protects — publishing it here would be the leak it prevents. So CI proves
-the bundle is byte-for-byte what a boundary-checked build produced, and nothing stronger.
+two things about the bundle: it matches the checksums committed beside it, and nothing was added.
+Because `.bundle-sha256` lives in this tree, one commit can change a skill file and its checksum
+together and stay green. That the bundle came from the generator rests on review.

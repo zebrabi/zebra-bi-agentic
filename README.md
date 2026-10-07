@@ -1,4 +1,4 @@
-# Zebra BI for Claude
+# Zebra BI agentic
 
 Describe the report you want. Get a Power BI report built with Zebra BI visuals.
 
@@ -35,7 +35,9 @@ practice this is a Windows tool.
 them. If you do not have one:
 **https://zebrabi.com/pro-trial/power-bi/?utm_source=agent-skills&utm_medium=plugin&utm_campaign=readme**
 gives you a key in a couple of minutes. Paste the key into the chat and the agent activates the
-visuals from the report itself; there is nothing to type in Power BI Desktop.
+visuals from the report itself; there is nothing to type in Power BI Desktop. Pasting the key sends
+it to your model provider and keeps it in the conversation history, so use a trial key here if you
+can. See [`SECURITY.md`](SECURITY.md).
 
 **3. A data model that can show a variance.** This is the big one. Your model needs:
 
@@ -94,6 +96,11 @@ Two of its checks are about your model, and they are the ones to pay attention t
 have scenario measures, and whether a date table is marked. If either fails, fix that first.
 Everything else about the report will look fine and be wrong.
 
+**Work on a copy.** The agent rewrites the report layer of the project you point it at, so give it a
+copy, never a live project, and keep that copy out of synced OneDrive or SharePoint folders. Once
+Power BI Desktop saves the report, your licence key is in its files, and sync uploads them to the
+cloud, where anyone the folder is shared with can open them.
+
 **Step two: ask for a report.**
 
 ```
@@ -138,10 +145,15 @@ Worth knowing before you start, so nothing here surprises you later.
 can tell you a column is bound to the wrong field or a formatting rule will be ignored. It cannot
 tell you that revenue should be 4.2 million. Check the headline figures yourself.
 
-**It cannot see the rendered page.** Its checks read files. Some faults only appear on screen, so
-look at the report.
+**The checker cannot see the rendered page.** It reads files. The agent does look at the page: it
+opens the report in Power BI Desktop, takes a screenshot of each page and checks what it sees.
+Look at the report yourself as well.
 
 **It is Windows only in practice**, because Power BI Desktop is.
+
+**It cannot keep your data away from your model provider.** Your agent host sends what the agent
+reads, including your data and screenshots of the report, to the model provider you configured. See
+[`SECURITY.md`](SECURITY.md).
 
 **It cannot tell whether two periods are comparable.** If your actuals stop in April and last year
 runs to December, every variance on the page is wrong, and nothing in the files says so. The
