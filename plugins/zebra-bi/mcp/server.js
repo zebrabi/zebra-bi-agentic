@@ -604,6 +604,16 @@ const ENCODERS = {
 // type produces, why a property group is never written unattended, and what is deliberately not
 // written at all.
 
+/** The one licence note, shared by the writer descriptions. */
+const LICENCE_NOTE = "Zebra BI visuals store licence information in each visual's objects and in "
+  + "Power BI Desktop's local storage. That is normal; leave it in place, because removing it can "
+  + "make a visual render unlicensed on a machine whose local storage does not hold the entitlement.";
+
+const REPORT_PATH_DESC = "Absolute path of the existing <name>.Report directory, when this call "
+  + "replaces files in it. Pass it whenever you rewrite existing pages: for each visual whose "
+  + "definition/pages/<page>/visuals/<name>/visual.json exists there, the writer reads that file and "
+  + "carries its licence groups through unchanged. Omit it for a new report.";
+
 /** The escape hatch, described once and referenced from the visual, page and container schemas. */
 const PROPERTY_MAP_DESC =
   "Arbitrary properties as a map of 'objectGroup.propertyName' to a value. This is the main road, "
@@ -617,9 +627,8 @@ const PROPERTY_MAP_DESC =
   + "{\"__raw\":{...}} is the whole value verbatim, for a property that is not a PBIR literal at "
   + "all, such as a textbox's general.paragraphs. Only the groups "
   + "you name are written — no group is present in 90% of real files, so there is no default "
-  + "layer. licenseSettings, license, version, visualCreatedVersion, migrationLog and "
-  + "previewSettings are REFUSED: that is telemetry the visual writes about itself, and a licence "
-  + "key in a report file is a credential.";
+  + "layer. version, visualCreatedVersion, migrationLog and previewSettings are REFUSED here: "
+  + "the visual writes them about itself.";
 
 const VISUAL_SPEC_SCHEMA = {
   type: "object",
@@ -673,8 +682,11 @@ const VISUAL_SPEC_SCHEMA = {
     rawObjects: { type: "object", description: "Whole object groups passed through verbatim, as "
       + "objectGroup to the raw entry array. For a group this writer has no model for: more than "
       + "one entry, a `selector` beside the properties, or a shape a future schema introduces. "
-      + "Still refused for the never-emit groups — a passthrough that skipped that check would be "
-      + "the one door left open to a licence key." },
+      + "Still refused for the visual's own bookkeeping groups (version, migrationLog and so on)." },
+    existingVisualPath: { type: "string", description: "Absolute path of the visual.json this "
+      + "call replaces. Pass it whenever you rewrite an existing visual: the writer reads that file "
+      + "and carries its licenseSettings and license groups through unchanged (a group your spec "
+      + "provides wins). " + LICENCE_NOTE },
     queryExtras: { type: "object", description: "Siblings of queryState inside visual.query — "
       + "`sortDefinition`, which is how a visual's own sort is authored, and `isDrillDisabled`. "
       + "Passed through verbatim." },
@@ -715,7 +727,8 @@ const WRITERS = {
       + "and about 1x on one dominated by a passthrough filterConfig or a large comment blob. "
       + "Blobs are built by the encoder tools, never re-derived here. Nothing is written to disk. "
       + "Run validate_report over the finished project afterwards: this writes what you ask for "
-      + "and does not check whether you asked for the right thing.",
+      + "and does not check whether you asked for the right thing. When this replaces an existing "
+      + "visual.json, pass existingVisualPath so its licence information is kept.",
     schema: VISUAL_SPEC_SCHEMA,
   },
   write_page: {
@@ -723,10 +736,12 @@ const WRITERS = {
     description: "Write a page.json and every visual.json on it in one call. Returns a map of "
       + "path to content, with paths relative to the .Report directory "
       + "(definition/pages/<name>/…), so a page written on its own and a page written as part of "
-      + "a report land in the same place. Nothing is written to disk.",
+      + "a report land in the same place. Nothing is written to disk. When this replaces an "
+      + "existing page, pass existingReportPath so each visual's licence information is kept.",
     schema: {
       type: "object",
-      properties: PAGE_SPEC_PROPERTIES,
+      properties: { ...PAGE_SPEC_PROPERTIES,
+        existingReportPath: { type: "string", description: REPORT_PATH_DESC } },
       required: ["name", "displayName"],
     },
   },
@@ -736,7 +751,9 @@ const WRITERS = {
       + "every visual directory — as one map of path to content. Replaces twenty-odd sequential "
       + "hand-written files with a single call. What it does NOT write comes back in notWritten, "
       + "and that list matters: report.json carries the base theme, and a report with no base "
-      + "theme renders NOTHING with no error anywhere. Nothing is written to disk.",
+      + "theme renders NOTHING with no error anywhere. Nothing is written to disk. When this "
+      + "replaces an existing report's pages, pass existingReportPath so each visual's licence "
+      + "information is kept.",
     schema: {
       type: "object",
       properties: {
@@ -744,6 +761,7 @@ const WRITERS = {
           items: { type: "object", properties: PAGE_SPEC_PROPERTIES,
                    required: ["name", "displayName"] } },
         activePageName: { type: "string", description: "Defaults to the first page." },
+        existingReportPath: { type: "string", description: REPORT_PATH_DESC },
         pagesSchemaVersion: { type: "string", description: "pagesMetadata schema. Defaults to "
           + "1.1.0, which is the pageOrder form. The older pages[]-with-ordinal form is not "
           + "emitted." },

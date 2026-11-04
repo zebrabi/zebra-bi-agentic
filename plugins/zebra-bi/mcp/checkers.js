@@ -257,21 +257,34 @@ const checkers = {
         // fired this rule -- at `wont-open`, the most severe level -- on a model that opens fine.
         // One trailing `(` in a comment on a 400-measure model was 400 findings. Reported by
         // review 2026-08-31.
-        let depth = 0, inString = false;
+        let depth = 0, inString = false, code = "";
         for (let k = 0; k < expr.length; k++) {
           const ch = expr[k];
           if (ch === '"') { inString = !inString; continue; }
           if (inString) continue;
           if ((ch === "-" && expr[k + 1] === "-") || (ch === "/" && expr[k + 1] === "/")) break;
+          // A bracketed name, a quoted table name and a block comment are not code either:
+          // `[Return on Equity]`, `Sales[Return]`, `'Return Items'` and `/* RETURN */` must not
+          // read as the RETURN keyword. An unclosed block comment runs to the end of the line.
+          if (ch === "[") { const e = expr.indexOf("]", k + 1); if (e < 0) break; k = e; continue; }
+          if (ch === "'") { const e = expr.indexOf("'", k + 1); if (e < 0) break; k = e; continue; }
+          if (ch === "/" && expr[k + 1] === "*") {
+            const e = expr.indexOf("*/", k + 2); if (e < 0) break; k = e + 1; continue;
+          }
+          code += ch;
           if (ch === "(") depth++;
           else if (ch === ")") depth--;
         }
         // VAR is the form the field actually hits. `measure X = VAR a = 1` is balanced, so the
         // paren test passed it, and every VAR/RETURN measure takes this shape -- which is to say
         // the rule named the fault, was tested, and missed its most common instance. A VAR
-        // without a RETURN is not valid DAX, so a VAR on the = line ALWAYS continues below.
+        // without a RETURN is not valid DAX, so a VAR on the = line with no RETURN after it
+        // continues below. A complete one-line `VAR ... RETURN ...` does not: Desktop opens and
+        // renders it (2026-10-21), so it counts as a continuation only while a paren is open.
+        // The RETURN must have its body on the same line: a trailing RETURN continues below.
         // Reported from the field 2026-08-22, confirmed by probe 2026-08-28.
-        if (depth <= 0 && !/^VAR\s/i.test(expr)) continue;
+        const varWithoutReturn = /^VAR\s/i.test(expr) && !/\bRETURN[ \t]+\S/i.test(code);
+        if (depth <= 0 && !varWithoutReturn) continue;
         out.push({ location: `${rel}:${i + 1}:${m[2] || m[3]}` });
       }
     }
@@ -562,13 +575,21 @@ const checkers = {
       .map((f) => ({ location: `${f.rel}:datasetReference.byPath.path=${f.byPath}` }));
   },
 
-  /** No base theme renders nothing: no visuals, no page tabs, no error. */
+  /**
+   * No theme at all renders nothing: no visuals, no page tabs, no error. A report with only a
+   * `customTheme` (what Desktop writes on Save As PBIP) opens and renders, so either one passes,
+   * but a customTheme counts only when it names a theme: an empty one is no theme at all.
+   */
   "report-requires-a-base-theme"(p) {
     const r = p.files.get("definition/report.json");
     if (!r || r.parseError) return [];
-    return r.parsed?.themeCollection?.baseTheme
-      ? []
-      : [{ location: "definition/report.json:themeCollection.baseTheme" }];
+    const tc = r.parsed?.themeCollection;
+    if (tc?.baseTheme) return [];
+    const custom = tc?.customTheme;
+    if (typeof custom?.name === "string" && custom.name.trim()) return [];
+    return [{ location: custom
+      ? "definition/report.json:themeCollection.customTheme.name"
+      : "definition/report.json:themeCollection.baseTheme" }];
   },
 
   /**

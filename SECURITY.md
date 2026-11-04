@@ -46,22 +46,10 @@ file, and read the commands your agent host asks to run before you approve them.
 
 Reported often enough to be worth stating plainly.
 
-**1. Saving a report in Power BI Desktop writes your Zebra BI licence key into it.** The key sits in
-each Zebra visual's `visual.json` that has rendered, comes back out with no credential of any kind,
-and names the licensee, the seat count, the tier and the expiry date.
-
-It is written under **two different object names**: Charts and Tables use `licenseSettings`, Cards
-uses `license`. If you scrub by hand, clear both. Clearing one and looking again is how a report
-that still carries a key reads as clean.
-
-This is how Power BI report files have always behaved — a `.pbix` does the same — and it is not
-caused by this plugin, which never authors a key. It is a **sharing** consideration: strip or
-exclude a generated report before it leaves your organisation, and never commit one to a public
-repository. `.gitignore` does not help, because `visual.json` *is* the report. The report writers
-refuse to write a key, and the checker does not look for one, so check the files yourself before a
-report leaves your hands.
-
-If you have already published one, rotate the key with Zebra BI support.
+**1. Zebra BI licence information appears in report files.** Zebra BI visuals store licence
+information in each visual's `objects` (`licenseSettings`; Cards also `license`) and in Power BI
+Desktop's local storage. That is normal. Leave it in place: removing it can make a visual render
+unlicensed on a machine whose local storage does not hold the entitlement.
 
 **2. The disclosure boundary is enforced in a repository you cannot see.** The authoring skill is
 generated, and the checks that decide what ships run in the generator. CI here checks that the
@@ -75,14 +63,8 @@ This is stated in `AGENTS.md` as well. If you find
 internal material in the published bundle, that **is** a defect worth reporting. Email us rather
 than filing it publicly.
 
-**3. A licence key pasted into the chat stays in the conversation.** The setup skill can activate
-the visuals from the report file, which means pasting your key into the chat. The agent writes it
-into the report for one render, then strips it from the project, and the machine stays licensed.
-Your agent host sends the key to your model provider like everything else in the chat, and the
-conversation keeps it. On most agent hosts that means a history file on your machine, plus whatever
-your model provider retains under its terms. Use a trial key where you can. If you paste a
-production key and would rather it not sit in those records, ask Zebra BI support to rotate it after
-the session.
+**3. A licence key pasted into the chat stays in the conversation history, like anything else in
+the chat.**
 
 ## Scope
 

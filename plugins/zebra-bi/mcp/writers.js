@@ -27,9 +27,11 @@
  *   caller did not ask for is therefore NOT emitted. There is no "sensible default" layer, because
  *   the corpus says there is no sensible default.
  *
- *   24.7% of stored bytes are telemetry the visual writes about ITSELF — licence key, version,
- *   migration log, preview flags. None of it is design and one of them is a credential. Those
- *   groups are refused, actively, because a general escape hatch makes them reachable by name.
+ *   24.7% of stored bytes are telemetry the visual writes about ITSELF — licence information,
+ *   version, migration log, preview flags. None of it is design. The bookkeeping groups are
+ *   refused from a spec, actively, because a general escape hatch makes them reachable by name.
+ *   Licence information is left in place: a writer given the path of the file it replaces carries
+ *   the licence groups through unchanged.
  *
  * Compression is real but bounded, and the spread matters more than the headline. Measured over
  * 589 real `visual.json` files: 1.5-8.0x per visual, and 2.7-5.3x per whole report against what is
@@ -46,6 +48,8 @@
  * a customer's project would be a different and much larger promise.
  */
 
+const fs = require("fs");
+const path = require("path");
 const enc = require("./encoders.js");
 const { EncodeError } = enc;
 const need = (cond, msg) => { if (!cond) throw new EncodeError(msg); };
@@ -102,19 +106,22 @@ const isZebraType = (t = "") => ZEBRA_PREFIXES.some((p) => t.startsWith(p));
 
 // --- what must never be written ---------------------------------------------------------------
 /**
- * Telemetry the visual writes about itself, not design. 24.7% of stored bytes across the corpus,
- * and `licenseSettings.licenseKey` is a credential: a report carrying one cannot be shared outside
- * the company or committed to a public repository.
+ * Telemetry the visual writes about itself, not design.
  *
  * This is an active refusal rather than a quiet omission, and the difference matters. A generator
  * with no escape hatch could simply never emit them. This one takes arbitrary dotted paths, so
  * "we don't emit that" is only true until a caller types the name. The check is on the path, not
  * on the value, so it cannot be defeated by a key that happens to look like something else.
+ *
+ * Licence information is not on this list. Zebra BI visuals store it in each visual's objects
+ * (`licenseSettings`; Cards also `license`) and in Power BI Desktop's local storage. That is
+ * normal; leave it in place, because removing it can make a visual render unlicensed on a machine
+ * whose local storage does not hold the entitlement. A spec may carry the licence groups like any
+ * other group, and a writer given the path of the file it replaces carries them through unchanged
+ * (see carryLicence).
  */
+const LICENCE_GROUPS = ["licenseSettings", "license"];
 const NEVER_EMIT = {
-  licenseSettings: "a Zebra licence key, which is a credential — the machine resolves the licence, "
-    + "the report does not carry it",
-  license: "licence state the visual writes about itself",
   version: "the visual's own build number, which it rewrites on every render",
   visualCreatedVersion: "the build number the visual was created under",
   migrationLog: "the visual's internal migration bookkeeping",
@@ -148,9 +155,6 @@ function assertEmittable(group, prop, where) {
     `'${group}.${prop}' cannot be written through 'properties'. Cards ids are minted by Power BI `
     + `Desktop and cannot be computed, so per-card settings go through the 'cardInvert' field, `
     + `which routes to the same two-step encoder (plan_card_invert, then encode_card_invert).`);
-  need(!/^licen[cs]eKey$/i.test(prop),
-    `'${group}.${prop}' looks like a licence key under a different group name. Refused: a licence `
-    + `key in a report file is a credential leak, and the licence resolves per machine anyway.`);
 }
 
 // --- PBIR literals ----------------------------------------------------------------------------
@@ -407,11 +411,12 @@ const VISUAL_KEYS = new Set(["name", "visualType", "position", "bindings", "titl
   "rawObjects", "tableCalculations", "tableColumns", "addedFormulas", "annotations", "cardInvert",
   "highlights", "cagrArrows", "storageConfig", "categoryScenarios",
   "dataValueLists", "visualContainerObjects", "filterConfig", "queryExtras", "visualExtras",
-  "drillFilterOtherVisuals", "schemaVersion"]);
+  "drillFilterOtherVisuals", "schemaVersion", "existingVisualPath"]);
 const PAGE_KEYS = new Set(["name", "displayName", "width", "height", "displayOption", "type",
   "visibility", "pageBinding", "visualInteractions", "properties", "filterConfig", "schemaVersion",
-  "visuals"]);
-const REPORT_KEYS = new Set(["pages", "activePageName", "pagesSchemaVersion", "definitionVersion"]);
+  "visuals", "existingReportPath"]);
+const REPORT_KEYS = new Set(["pages", "activePageName", "pagesSchemaVersion", "definitionVersion",
+  "existingReportPath"]);
 
 function assertKnownKeys(spec, allowed, what) {
   const unknown = Object.keys(spec).filter((k) => !allowed.has(k) && spec[k] !== undefined);
@@ -419,6 +424,43 @@ function assertKnownKeys(spec, allowed, what) {
     `unknown ${what} field(s): ${unknown.join(", ")}. A field this writer does not read would be `
     + `silently dropped, producing a file that renders and is missing what you asked for. Known `
     + `fields: ${[...allowed].join(", ")}.`);
+}
+
+// --- licence information on a rewrite ----------------------------------------------------------
+/**
+ * Reads the visual.json being replaced and copies its licence groups into `objects`, unchanged.
+ * The writer reads the file itself, so nothing depends on a caller copying arrays by hand.
+ * Read-only. A missing or unreadable file carries nothing and says so in a warning; it never fails
+ * the write.
+ */
+function carryLicence(objects, file, warnings) {
+  need(typeof file === "string" && path.isAbsolute(file),
+    "existingVisualPath must be the absolute path of the visual.json this call replaces.");
+  let found;
+  try {
+    found = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (e) {
+    warnings.push(`No readable visual.json at ${file} (${e.code || "not valid JSON"}), so no `
+      + `licence information was carried.`);
+    return;
+  }
+  const from = found && found.visual && found.visual.objects;
+  for (const group of LICENCE_GROUPS) {
+    if (from && from[group] !== undefined && objects[group] === undefined) objects[group] = from[group];
+  }
+}
+
+/** Checks the existing .Report path given to write_page or write_report. Returns it, or null. */
+function existingReport(dir, warnings) {
+  if (dir === undefined) return null;
+  need(typeof dir === "string" && path.isAbsolute(dir),
+    "existingReportPath must be the absolute path of the existing <name>.Report directory.");
+  if (!fs.existsSync(path.join(dir, "definition", "pages"))) {
+    warnings.push(`${dir} has no definition/pages directory, so no licence information was `
+      + `carried. Pass the <name>.Report directory itself.`);
+    return null;
+  }
+  return dir;
 }
 
 function writeVisual(spec = {}) {
@@ -487,7 +529,7 @@ function writeVisual(spec = {}) {
   // Groups this writer has no model for: more than one entry, a `selector` beside the properties,
   // any shape a future Power BI schema introduces. Passed through verbatim -- but still checked
   // against the never-emit set, because a passthrough that skipped that check would be the one
-  // door left open to a licence key.
+  // door left open to the visual's own bookkeeping.
   for (const [group, entries] of Object.entries(spec.rawObjects ?? {})) {
     assertEmittable(group, "*", "rawObjects");
     need(!objects[group],
@@ -495,6 +537,10 @@ function writeVisual(spec = {}) {
       + `Write the group once, one way.`);
     objects[group] = entries;
   }
+
+  // The licence groups of the visual being replaced, read from that file and carried through
+  // unchanged. Applied last and per group, so a group the spec itself provides wins.
+  if (spec.existingVisualPath !== undefined) carryLicence(objects, spec.existingVisualPath, warnings);
 
   let query;
   // Emitted only when there is something to put in it. A textbox has no `query` key at all, and
@@ -634,12 +680,17 @@ function writePage(spec = {}) {
 
   files[`${dir}/page.json`] = serialise(page);
 
+  const report = existingReport(spec.existingReportPath, warnings);
   const names = new Set();
   for (const v of spec.visuals ?? []) {
     need(!names.has(v && v.name),
       `two visuals on page '${spec.name}' are both called '${v && v.name}'. They would share one `
       + `directory and the second would overwrite the first.`);
-    const r = writeVisual(v);
+    // With the existing .Report directory given, each visual carries the licence groups of the
+    // file it replaces, when that file exists. A visual's own existingVisualPath wins.
+    const existing = report && v && typeof v.name === "string" && v.existingVisualPath === undefined
+      ? path.join(report, "definition", "pages", spec.name, "visuals", v.name, "visual.json") : null;
+    const r = writeVisual(existing && fs.existsSync(existing) ? { ...v, existingVisualPath: existing } : v);
     names.add(v.name);
     files[`${dir}/${r.path}`] = r.content;
     if (r.warnings) warnings.push(...r.warnings.map((w) => `${spec.name}/${v.name}: ${w}`));
@@ -669,8 +720,11 @@ function writeReport(spec = {}) {
   const files = {};
   const order = [];
 
+  // Checked once here so a wrong path warns once, not once per page.
+  const report = existingReport(spec.existingReportPath, warnings);
   for (const p of spec.pages) {
-    const r = writePage(p);
+    const r = writePage(report && p && p.existingReportPath === undefined
+      ? { ...p, existingReportPath: report } : p);
     need(!order.includes(p.name),
       `two pages are both called '${p.name}'. They would share one directory.`);
     order.push(p.name);
@@ -733,8 +787,9 @@ function summarise(files, spec, warnings, companions) {
  * what he meant rather than what the format needs.
  *
  * It DECODES — `'#1A1A2E'` becomes "#1A1A2E", `3D` becomes 3 — so regeneration has to re-encode
- * and cannot be a deep copy of pre-formed literals dressed up as a test. The never-emit groups are
- * dropped here, which is also how the comparison ignores them.
+ * and cannot be a deep copy of pre-formed literals dressed up as a test. The licence groups are
+ * derived like any other group; the never-emit groups are dropped here, which is also how the
+ * comparison ignores them.
  *
  * Not registered as a tool. It is an oracle, not a workflow: an agent editing an existing report
  * should read the file it is editing.

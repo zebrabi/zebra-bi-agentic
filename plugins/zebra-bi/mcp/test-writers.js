@@ -115,7 +115,7 @@ check("__raw writes a property value that is not a literal at all", () => {
 check("rawObjects passes a whole group through, but is still never-emit checked", () => {
   const f = emit({ rawObjects: { data: [{ properties: { a: 1 } }, { properties: { b: 2 } }] } });
   assert.strictEqual(f.visual.objects.data.length, 2, "a multi-entry group was not passed through");
-  refuses(w.writeVisual, { ...MIN, rawObjects: { licenseSettings: [] } }, "credential");
+  refuses(w.writeVisual, { ...MIN, rawObjects: { version: [] } }, "bookkeeping");
   refuses(w.writeVisual, { ...MIN, title: "T", rawObjects: { titleSettings: [] } }, "collides");
 });
 
@@ -160,14 +160,90 @@ check("every never-emit group is actively refused, not quietly dropped", () => {
   }
 });
 
-check("the licence key refusal says why, because it is a credential", () => {
-  refuses(w.writeVisual, { ...MIN, properties: { "licenseSettings.licenseKey": "X" } },
-    "credential");
+// --- licence information ------------------------------------------------------------------------
+// Zebra BI visuals store licence information in each visual's objects and in Desktop's local
+// storage. That is normal and is left in place. The values below are placeholders, not a key.
+const KEPT = {
+  licenseSettings: [{ properties: { licenseKey: { expr: { Literal: { Value: "'PLACEHOLDER-NOT-A-KEY'" } } } } }],
+  license: [{ properties: { licensedTo: { expr: { Literal: { Value: "'Example Ltd'" } } },
+                            validUntil: { expr: { Literal: { Value: "'2099-01-01'" } } } } }],
+};
+
+check("licence groups in a spec are written like any other group", () => {
+  const f = emit({ properties: { "licenseSettings.licenseKey": "X" }, rawObjects: { license: KEPT.license } });
+  assert.strictEqual(f.visual.objects.licenseSettings[0].properties.licenseKey.expr.Literal.Value, "'X'");
+  assert.deepStrictEqual(f.visual.objects.license, KEPT.license);
+  assert.strictEqual(emit({ properties: { "coreSettings.licenseKey": "X" } })
+    .visual.objects.coreSettings[0].properties.licenseKey.expr.Literal.Value, "'X'");
 });
 
-check("a licence key smuggled under another group name is still refused", () => {
-  refuses(w.writeVisual, { ...MIN, properties: { "coreSettings.licenseKey": "X" } }, "credential");
+// A temp .Report tree holding one existing Cards visual with both licence groups, and one existing
+// visual with none. The writer reads these itself; the caller passes only the path.
+const LIC_ROOT = fs.mkdtempSync(path.join(os.tmpdir(), "zbi-licence-"));
+const LIC_REPORT = path.join(LIC_ROOT, "Sales.Report");
+const existingVisual = (page, name, objects) => {
+  const dir = path.join(LIC_REPORT, "definition", "pages", page, "visuals", name);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, "visual.json");
+  fs.writeFileSync(file, JSON.stringify({ name, visual: { visualType: "zebraBiCards", objects } }));
+  return file;
+};
+const LIC_FILE = existingVisual("P", "V1", { ...KEPT, titleSettings: [{ properties: {} }] });
+existingVisual("P", "Bare", { titleSettings: [{ properties: {} }] });
+
+check("write_visual carries the licence groups of the file it replaces, unchanged", () => {
+  const f = emit({ visualType: "cards", title: "T", existingVisualPath: LIC_FILE });
+  assert.deepStrictEqual(f.visual.objects.licenseSettings, KEPT.licenseSettings);
+  assert.deepStrictEqual(f.visual.objects.license, KEPT.license);
+  assert.ok(f.visual.objects.titleSettings, "the licence groups displaced the authored ones");
 });
+
+check("a licence group the spec provides wins over the carried one", () => {
+  const f = emit({ existingVisualPath: LIC_FILE, properties: { "licenseSettings.licenseKey": "NEW" } });
+  assert.strictEqual(f.visual.objects.licenseSettings[0].properties.licenseKey.expr.Literal.Value, "'NEW'");
+  assert.deepStrictEqual(f.visual.objects.license, KEPT.license);
+});
+
+check("a missing or unreadable existing file carries nothing, warns, and does not crash", () => {
+  const r = w.writeVisual({ ...MIN, title: "T", existingVisualPath: path.join(LIC_ROOT, "nope", "visual.json") });
+  const f = JSON.parse(r.content);
+  assert.ok(!f.visual.objects.licenseSettings && !f.visual.objects.license, "a licence group was invented");
+  assert.ok(r.warnings.some((x) => /no licence information was carried/.test(x)));
+  refuses(w.writeVisual, { ...MIN, existingVisualPath: "relative/visual.json" }, "absolute path");
+});
+
+check("a visual written without an existing path carries no licence group", () => {
+  assert.ok(!emit({ title: "T" }).visual.objects.licenseSettings, "a licence group was invented");
+});
+
+check("write_page carries licence groups per visual from the existing .Report directory", () => {
+  const page = { name: "P", displayName: "P", existingReportPath: LIC_REPORT, visuals: [
+    { ...MIN, title: "T" }, { ...MIN, name: "Bare", title: "T" }, { ...MIN, name: "New", title: "T" }] };
+  const p = w.writePage(page);
+  const got = (n) => JSON.parse(p.files[`definition/pages/P/visuals/${n}/visual.json`]).visual.objects;
+  assert.deepStrictEqual(got("V1").licenseSettings, KEPT.licenseSettings);
+  assert.deepStrictEqual(got("V1").license, KEPT.license);
+  for (const n of ["Bare", "New"]) assert.ok(!got(n).licenseSettings && !got(n).license, `${n} invented a group`);
+  assert.ok(!(p.warnings || []).some((x) => /licence/.test(x)), `a clean carry warned: ${p.warnings}`);
+});
+
+check("write_report carries licence groups per visual from the existing .Report directory", () => {
+  const r = w.writeReport({ existingReportPath: LIC_REPORT,
+    pages: [{ name: "P", displayName: "P", visuals: [{ ...MIN, title: "T" }] },
+            { name: "Q", displayName: "Q", visuals: [{ ...MIN, title: "T" }] }] });
+  const got = (pg) => JSON.parse(r.files[`definition/pages/${pg}/visuals/V1/visual.json`]).visual.objects;
+  assert.deepStrictEqual(got("P").licenseSettings, KEPT.licenseSettings);
+  assert.deepStrictEqual(got("P").license, KEPT.license);
+  assert.ok(!got("Q").licenseSettings, "a visual on a page with no existing file carried a group");
+});
+
+check("a wrong .Report path warns once and carries nothing", () => {
+  const r = w.writeReport({ existingReportPath: LIC_ROOT,
+    pages: [{ name: "P", displayName: "P", visuals: [{ ...MIN, title: "T" }] }] });
+  assert.ok(!JSON.parse(r.files["definition/pages/P/visuals/V1/visual.json"]).visual.objects.licenseSettings);
+  assert.strictEqual(r.warnings.filter((x) => /definition\/pages/.test(x)).length, 1);
+});
+fs.rmSync(LIC_ROOT, { recursive: true, force: true });
 
 check("Cards customData is refused through the escape hatch and routed to the encoder", () => {
   refuses(w.writeVisual, { ...MIN, visualType: "cards", properties: { "customData.uniformData": 1 } },
@@ -572,8 +648,7 @@ check("the negative control: the same report written the wrong way IS caught", (
 
 /**
  * Semantic equality, ignoring key order and ignoring the never-emit groups — those are telemetry
- * the visual writes about itself and a generator that reproduced them would be reproducing a
- * licence key.
+ * the visual writes about itself. The licence groups are kept, and round-trip like any other group.
  */
 function stripNeverEmit(file) {
   const out = JSON.parse(JSON.stringify(file));
@@ -864,7 +939,7 @@ function rpc(messages) {
       arguments: FULL_REPORT } },
     { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "write_visual",
       arguments: { name: "V", visualType: "tables", position: { x: 0, y: 0, width: 1, height: 1 },
-                   properties: { "licenseSettings.licenseKey": "secret" } } } },
+                   properties: { "version.build": "1" } } } },
   ]);
 
   check("PROTOCOL: the three writers are advertised with drivable schemas", () => {
@@ -893,7 +968,7 @@ function rpc(messages) {
   check("PROTOCOL: a refused write comes back as an answer, not a dead connection", () => {
     const r = replies.find((x) => x.id === 3);
     assert.strictEqual(r.result.isError, true);
-    assert.ok(/credential/.test(JSON.parse(r.result.content[0].text).error));
+    assert.ok(/bookkeeping/.test(JSON.parse(r.result.content[0].text).error));
   });
 
   for (const [s, n, d] of results) console.log(`  ${s}  ${n}${d ? "  <- " + d : ""}`);

@@ -6,7 +6,7 @@ Plus variant.
 
 | product | `visualType` — AUTHOR WITH THESE | installed |
 |---|---|---|
-| Zebra BI **Tables+** — **default** | `ZebraBITablesPlus3E6085701D7B426980C3859B16327993` | 8.3.0.16 (Beta) |
+| Zebra BI **Tables+** — **default** | `ZebraBITablesPlus3E6085701D7B426980C3859B16327993` | 8.3.0.16 (Beta); a Desktop 2.159 save migrated it to 8.4.0 |
 | Zebra BI **Charts+** — **default** | `ZebraBIChartsPlusC3F2FD9F79054F76BD1B722E7666AC33` | 8.2.1 (Beta) |
 | Zebra BI **Cards** | `zebraBiCards2C860CFAA9944091B75F0DBD117F20FA` | 7.4.2.115 |
 | Zebra BI **Tables** (certified) | `ZebraBITablesBAE31B370F254F808553548EFB35BFA5` | 8.3.0.37 |
@@ -16,7 +16,8 @@ Plus variant.
 The Plus visuals are *not* organizational-store visuals: Desktop writes their plain GUID with no
 `_OrgStore` suffix and adds no `resourcePackages` entry, so nothing about registering them differs
 from the certified three. **Charts+ 8.2.1 is ahead of certified Charts 8.1.0.36**, so do not assume
-the Plus build trails its twin.
+the + build trails its twin. These are the builds measured here; a Desktop save can migrate Tables+
+or Charts+ to a newer build (Tables+ 8.3.2 to 8.4.0 on 2.159), so read the `version` in the project's own visuals.
 
 **Every version here is what the visual reports about itself on this machine**, read off its own
 landing page or its package. Yours may differ; the GUIDs are the stable part, and nothing in this
@@ -405,16 +406,18 @@ embedded payloads. So: `CustomVisuals/` deleted, every `CustomVisual` resource p
 **It rendered a complete IBCS variance table** — PY column, AC bars, ΔPY, ΔPY% — with the same
 DAX-verified numbers.
 
-Two things follow, and they remove a manual step people would otherwise be told to do:
+Three things follow:
 
-- **Registration needs no `licenseSettings.licenseKey`, so never hunt for one or copy one from
-  another report.** A report authored without one renders on a machine that holds the visuals —
-  proven in both arms below. Vendor templates and saved reports carry one because a *human* saving
-  the report writes it, and because it is how the entitlement travels with the file.
+- **Licence information is normal, so leave it in place.** Zebra BI visuals store licence
+  information in each visual's `objects` (`licenseSettings`; Cards also `license`) and in Power BI
+  Desktop's local storage. Removing it can make a visual render unlicensed on a machine whose local
+  storage does not hold the entitlement. When a write replaces existing files, pass the existing
+  path (`existingVisualPath` on `write_visual`, `existingReportPath` on `write_page` and
+  `write_report`); the writer reads those files and carries their licence groups through unchanged.
 - **A key the user hands you is how you activate the visuals — from the file, with no Desktop
   step.** When a Zebra visual renders in **Free** mode (a footer reading *"Zebra BI Charts · Free ·
   Enter license key"*), and the user pastes a key from their trial or purchase email into the chat,
-  write it into **every** Zebra visual on the report and render once:
+  write it into **every** Zebra visual on the report and render once, and leave it in place:
 
   ```json
   "objects": {
@@ -427,10 +430,7 @@ Two things follow, and they remove a manual step people would otherwise be told 
   Cards also carry the same key under `license`, with `licensedTo` and `validUntil` beside it; write
   `licenseSettings` on Cards too, and `license` as well if it stays Free. On the next render the
   visual reads the key, drops the Free footer, and **stores the entitlement in Desktop's own
-  storage** — a later report on that machine renders licensed with no key in its files. Then run
-  the licence stripper over the project so the key does not travel with the report; the machine
-  stays entitled. Never author a key the user did not give you, and never leave one in a project
-  you hand over.
+  storage** — a later report on that machine renders licensed.
 - **You do not need anything pre-placed in the report.** Three GUIDs in `publicCustomVisuals` is the
   whole registration — no payload, no resource package, no seeded visual. Desktop fetches an
   AppSource visual by GUID for a report it has never opened and a visual the machine has never
