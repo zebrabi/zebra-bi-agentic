@@ -628,7 +628,11 @@ const PROPERTY_MAP_DESC =
   + "all, such as a textbox's general.paragraphs. Only the groups "
   + "you name are written — no group is present in 90% of real files, so there is no default "
   + "layer. version, visualCreatedVersion, migrationLog and previewSettings are REFUSED here: "
-  + "the visual writes them about itself.";
+  + "the visual writes them about itself. (For Charts+ the writer itself adds visualCreatedVersion "
+  + "when a licence key is written; see installedVersion.) A licenseSettings.licenseKey on Tables+ "
+  + "or Charts+ is written with a fresh licenseSettings.appliedTimestamp unless you give one: the "
+  + "visual keeps whichever stored key has the larger timestamp, so a key without one loses to an "
+  + "older key already stored on the machine.";
 
 const VISUAL_SPEC_SCHEMA = {
   type: "object",
@@ -687,6 +691,11 @@ const VISUAL_SPEC_SCHEMA = {
       + "call replaces. Pass it whenever you rewrite an existing visual: the writer reads that file "
       + "and carries its licenseSettings and license groups through unchanged (a group your spec "
       + "provides wins). " + LICENCE_NOTE },
+    installedVersion: { type: "string", description: "Charts+ only, and only when this spec writes a "
+      + "licence key: the installed Charts+ version as Format > About shows it, for example "
+      + "'8.3.0.24'. Written as visualCreatedVersion beside proFeaturesSettings. Without it the "
+      + "writer keeps the value in the file named by existingVisualPath, and otherwise leaves it "
+      + "out with a warning." },
     queryExtras: { type: "object", description: "Siblings of queryState inside visual.query — "
       + "`sortDefinition`, which is how a visual's own sort is authored, and `isDrillDisabled`. "
       + "Passed through verbatim." },

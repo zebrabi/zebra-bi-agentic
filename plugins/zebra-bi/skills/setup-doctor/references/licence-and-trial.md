@@ -39,6 +39,33 @@ render once:
   "licenseSettings": [ { "properties": { "licenseKey": { "expr": { "Literal": { "Value": "'<key>'" } } } } } ],
 ```
 
+- On **Tables+ and Charts+**, write a timestamp beside the key, set to the time of the write in
+  milliseconds with a `D` suffix. These visuals hold the key twice, in the file and in Desktop's
+  local storage, and keep the copy with the larger `appliedTimestamp` (a missing one counts as 0).
+  A key written alone loses to an older key already stored on the machine, and the visual stays
+  locked ("Available with a Paid Plan"). Never reuse an earlier timestamp with a new key.
+
+  ```json
+  "licenseSettings": [ { "properties": {
+    "licenseKey": { "expr": { "Literal": { "Value": "'<key>'" } } },
+    "appliedTimestamp": { "expr": { "Literal": { "Value": "<Date.now()>D" } } } } } ],
+  ```
+
+- On **Charts+**, also write these two groups. Which of them matters has not been isolated, so
+  write both; `<version>` is the installed Charts+ version, shown in Format > About.
+
+  ```json
+  "proFeaturesSettings": [ { "properties": { "show": { "expr": { "Literal": { "Value": "true" } } } } } ],
+  "visualCreatedVersion": [ { "properties": { "version": { "expr": { "Literal": { "Value": "'<version>'" } } } } } ],
+  ```
+
+  `write_visual`, `write_page` and `write_report` do this when the spec carries
+  `licenseSettings.licenseKey` on a Tables+ or Charts+ visual. For Charts+ pass `installedVersion`,
+  or `existingVisualPath` of a file that already holds `visualCreatedVersion`; without either, that
+  one group is left out and the writer says so. Carrying an existing licence unchanged keeps its own
+  timestamp.
+- To confirm a key took effect, check the **Expires** field in Format > About, not "Licensed to":
+  older keys carry the same licensee.
 - The value is the key in single quotes, like every other string literal.
 - It is an **array** of property blocks, like every other `objects` entry. A bare object makes
   Desktop refuse the whole report: *"Property /visual/objects/licenseSettings … was not provided as

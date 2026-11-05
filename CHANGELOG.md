@@ -44,6 +44,12 @@ though they shipped would misrepresent what anyone could have installed.
   `cultures/` file is measured on 2.156 (one 2.159 observation reloaded successfully), the bridge
   manifest on 2.159 also lists `report.snapshot.capture/v2`, and a Desktop save can migrate
   Tables+ and Charts+ to a newer build (Tables+ 8.4.0 seen on 2.159).
+- Writing a licence key on Tables+ or Charts+ now also writes a fresh `licenseSettings.appliedTimestamp`
+  (these visuals keep the key in the file and in Desktop's local storage and use the copy with the
+  larger timestamp, so a key without one stayed locked on a machine holding an older key), and Charts+
+  also gets `proFeaturesSettings` and, from `installedVersion` or the replaced file,
+  `visualCreatedVersion`. The writers do this; the setup and authoring references describe the payload
+  and say to check Expires in Format > About, not "Licensed to".
 
 ## 0.3.1 (2026-10-07)
 

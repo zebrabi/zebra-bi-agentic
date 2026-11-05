@@ -424,6 +424,18 @@ Three things follow:
     "licenseSettings": [ { "properties": { "licenseKey": { "expr": { "Literal": { "Value": "'<key>'" } } } } } ],
   ```
 
+  On **Tables+ and Charts+** write `"appliedTimestamp": { "expr": { "Literal": { "Value":
+  "<Date.now()>D" } } }` beside `licenseKey`, fresh at the time of the write. These visuals keep the
+  key in the file and in Desktop's local storage and use the copy with the larger timestamp (a
+  missing one counts as 0), so a key without one loses to an older stored key and the visual stays
+  locked. **Charts+** also takes `"proFeaturesSettings": [ { "properties": { "show": { "expr": {
+  "Literal": { "Value": "true" } } } } } ]` and `"visualCreatedVersion": [ { "properties": {
+  "version": { "expr": { "Literal": { "Value": "'<installed Charts+ version>'" } } } } } ]`; write
+  both. The writers add all of this when the spec carries `licenseSettings.licenseKey`; for Charts+
+  also pass `installedVersion` (or an `existingVisualPath` that already holds the version). To
+  confirm, check the **Expires** field in Format > About, not "Licensed to": older keys carry the
+  same licensee.
+
   The value is the key in single quotes, like every other string literal. **It is an array of
   property blocks**, like every other `objects` entry; a bare object makes Desktop refuse the whole
   definition (*"Property /visual/objects/licenseSettings … was not provided as the correct type"*).

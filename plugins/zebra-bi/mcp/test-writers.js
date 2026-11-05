@@ -173,8 +173,113 @@ check("licence groups in a spec are written like any other group", () => {
   const f = emit({ properties: { "licenseSettings.licenseKey": "X" }, rawObjects: { license: KEPT.license } });
   assert.strictEqual(f.visual.objects.licenseSettings[0].properties.licenseKey.expr.Literal.Value, "'X'");
   assert.deepStrictEqual(f.visual.objects.license, KEPT.license);
-  assert.strictEqual(emit({ properties: { "coreSettings.licenseKey": "X" } })
-    .visual.objects.coreSettings[0].properties.licenseKey.expr.Literal.Value, "'X'");
+});
+
+// Neither Tables+ nor Charts+ declares coreSettings.licenseKey. The generic escape hatch still
+// writes whatever group it is given (certified visuals are untouched by this), but a licence key
+// written for a + visual never creates a coreSettings group, and writing one by hand is warned.
+check("a licence key on a + visual goes to licenseSettings and never creates coreSettings", () => {
+  for (const t of ["tables+", "charts+"]) {
+    const f = emit({ visualType: t, properties: { "licenseSettings.licenseKey": "PLACEHOLDER-NOT-A-KEY" } });
+    assert.ok(f.visual.objects.licenseSettings, `${t}: no licenseSettings`);
+    assert.strictEqual(f.visual.objects.coreSettings, undefined, `${t}: a coreSettings group was invented`);
+  }
+});
+
+check("coreSettings.licenseKey on a + visual is warned about; certified visuals are left alone", () => {
+  for (const t of ["tables+", "charts+"]) {
+    const r = w.writeVisual({ ...MIN, visualType: t, properties: { "coreSettings.licenseKey": "X" } });
+    assert.ok((r.warnings || []).some((x) => /coreSettings\.licenseKey/.test(x)), `${t}: no warning`);
+  }
+  const r = w.writeVisual({ ...MIN, visualType: "tables", properties: { "coreSettings.licenseKey": "X" } });
+  assert.ok(!(r.warnings || []).some((x) => /coreSettings/.test(x)), "certified Tables got a + warning");
+  assert.strictEqual(JSON.parse(r.content).visual.objects.coreSettings[0].properties.licenseKey
+    .expr.Literal.Value, "'X'", "certified behaviour changed");
+});
+
+// --- writing a licence key: appliedTimestamp, and the Charts+ extras -----------------------------------
+const KEY = { "licenseSettings.licenseKey": "PLACEHOLDER-NOT-A-KEY" };
+const stampOf = (f) => f.visual.objects.licenseSettings[0].properties.appliedTimestamp;
+const TS_RE = /^(\d{13})D$/;
+const emitBracketed = (extra) => {
+  const before = Date.now();
+  const r = w.writeVisual({ ...MIN, ...extra });
+  const after = Date.now();
+  return { r, f: JSON.parse(r.content), before, after };
+};
+
+check("a key written on Tables+ and Charts+ carries a fresh appliedTimestamp literal", () => {
+  for (const t of ["tables+", "charts+"]) {
+    const { f, before, after } = emitBracketed({ visualType: t, properties: KEY });
+    const lit = stampOf(f).expr.Literal.Value;
+    const m = TS_RE.exec(lit);
+    assert.ok(m, `${t}: ${lit} is not <13 digits>D`);
+    assert.ok(Number(m[1]) >= before && Number(m[1]) <= after, `${t}: ${lit} was not stamped at write time`);
+    assert.strictEqual(f.visual.objects.licenseSettings[0].properties.licenseKey.expr.Literal.Value,
+      "'PLACEHOLDER-NOT-A-KEY'");
+  }
+});
+
+check("Tables+ gets the timestamp and nothing else: no Charts+ extras", () => {
+  const f = emit({ visualType: "tables+", properties: KEY, installedVersion: "8.3.2.21" });
+  assert.ok(stampOf(f));
+  assert.strictEqual(f.visual.objects.proFeaturesSettings, undefined);
+  assert.strictEqual(f.visual.objects.visualCreatedVersion, undefined);
+});
+
+check("certified Tables, Charts and Cards are not stamped", () => {
+  for (const t of ["tables", "charts", "cards"]) {
+    const f = emit({ visualType: t, properties: KEY });
+    assert.strictEqual(stampOf(f), undefined, `${t} was stamped`);
+    assert.strictEqual(f.visual.objects.proFeaturesSettings, undefined, `${t} got Charts+ extras`);
+  }
+});
+
+check("Charts+ also gets proFeaturesSettings.show and visualCreatedVersion.version", () => {
+  const f = emit({ visualType: "charts+", properties: KEY, installedVersion: "8.3.0.24" });
+  assert.deepStrictEqual(f.visual.objects.proFeaturesSettings,
+    [{ properties: { show: { expr: { Literal: { Value: "true" } } } } }]);
+  assert.deepStrictEqual(f.visual.objects.visualCreatedVersion,
+    [{ properties: { version: { expr: { Literal: { Value: "'8.3.0.24'" } } } } }]);
+  assert.ok(stampOf(f));
+});
+
+check("Charts+ with no known version writes the other extras and says what it left out", () => {
+  const r = w.writeVisual({ ...MIN, visualType: "charts+", properties: KEY });
+  const f = JSON.parse(r.content);
+  assert.ok(f.visual.objects.proFeaturesSettings && stampOf(f));
+  assert.strictEqual(f.visual.objects.visualCreatedVersion, undefined);
+  assert.ok(r.warnings.some((x) => /visualCreatedVersion was not written/.test(x)));
+});
+
+check("installedVersion is validated, and ignored with a warning where it does not apply", () => {
+  refuses(w.writeVisual, { ...MIN, visualType: "charts+", properties: KEY, installedVersion: "latest" },
+    "installedVersion");
+  for (const extra of [{ visualType: "tables+", properties: KEY }, { visualType: "charts+" }]) {
+    const r = w.writeVisual({ ...MIN, ...extra, installedVersion: "8.3.0.24" });
+    assert.ok(r.warnings.some((x) => /installedVersion was ignored/.test(x)));
+    assert.strictEqual(JSON.parse(r.content).visual.objects?.visualCreatedVersion, undefined);
+  }
+});
+
+check("a spec that supplies its own appliedTimestamp or proFeaturesSettings keeps them", () => {
+  const f = emit({ visualType: "charts+", installedVersion: "8.3.0.24",
+    properties: { ...KEY, "licenseSettings.appliedTimestamp": 1730000000000, "proFeaturesSettings.show": false } });
+  assert.strictEqual(stampOf(f).expr.Literal.Value, "1730000000000D");
+  assert.strictEqual(f.visual.objects.proFeaturesSettings[0].properties.show.expr.Literal.Value, "false");
+});
+
+check("a key given through rawObjects is stamped too, and the spec is not mutated", () => {
+  const raw = { licenseSettings: [{ properties: { licenseKey: { expr: { Literal: { Value: "'PLACEHOLDER-NOT-A-KEY'" } } } } }] };
+  const before = JSON.stringify(raw);
+  const f = emit({ visualType: "tables+", rawObjects: raw });
+  assert.ok(TS_RE.test(stampOf(f).expr.Literal.Value));
+  assert.strictEqual(JSON.stringify(raw), before, "the caller's object was mutated");
+});
+
+check("licence settings with no key are not stamped", () => {
+  const f = emit({ visualType: "tables+", properties: { "licenseSettings.somethingElse": true } });
+  assert.strictEqual(stampOf(f), undefined);
 });
 
 // A temp .Report tree holding one existing Cards visual with both licence groups, and one existing
@@ -243,6 +348,66 @@ check("a wrong .Report path warns once and carries nothing", () => {
   assert.ok(!JSON.parse(r.files["definition/pages/P/visuals/V1/visual.json"]).visual.objects.licenseSettings);
   assert.strictEqual(r.warnings.filter((x) => /definition\/pages/.test(x)).length, 1);
 });
+// An existing + visual whose stored key is older, with its own timestamp, and (Charts+) a version.
+const oldLicence = (extra = {}) => ({
+  licenseSettings: [{ properties: {
+    licenseKey: { expr: { Literal: { Value: "'PLACEHOLDER-OLD-KEY'" } } },
+    appliedTimestamp: { expr: { Literal: { Value: "1000D" } } } } }],
+  ...extra,
+});
+const writePlus = (page, name, type, objects) => {
+  const dir = path.join(LIC_REPORT, "definition", "pages", page, "visuals", name);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, "visual.json");
+  fs.writeFileSync(file, JSON.stringify({ name, visual: { visualType: type, objects } }));
+  return file;
+};
+const OLD_TABLE = writePlus("P", "OldT", w.INSTALLED["tables+"], oldLicence());
+const OLD_CHART = writePlus("P", "OldC", w.INSTALLED["charts+"], oldLicence({
+  visualCreatedVersion: [{ properties: { version: { expr: { Literal: { Value: "'8.2.1.5'" } } } } }],
+  proFeaturesSettings: [{ properties: { show: { expr: { Literal: { Value: "false" } } } } }] }));
+
+check("a new key replaces the old key and gets a larger timestamp, never the old one", () => {
+  for (const [t, file] of [["tables+", OLD_TABLE], ["charts+", OLD_CHART]]) {
+    const { f, before } = emitBracketed({ visualType: t, existingVisualPath: file,
+      properties: { "licenseSettings.licenseKey": "PLACEHOLDER-NEW-KEY" } });
+    const lit = f.visual.objects.licenseSettings[0].properties.licenseKey.expr.Literal.Value;
+    assert.strictEqual(lit, "'PLACEHOLDER-NEW-KEY'");
+    const ts = Number(TS_RE.exec(stampOf(f).expr.Literal.Value)?.[1]);
+    assert.ok(ts >= before, `${t}: the timestamp ${ts} is not fresh`);
+    assert.notStrictEqual(stampOf(f).expr.Literal.Value, "1000D");
+  }
+});
+
+check("carrying an existing licence unchanged keeps its timestamp and adds no Charts+ extras", () => {
+  const f = emit({ visualType: "charts+", title: "T", existingVisualPath: OLD_CHART });
+  assert.deepStrictEqual(f.visual.objects.licenseSettings, oldLicence().licenseSettings);
+  assert.strictEqual(f.visual.objects.proFeaturesSettings, undefined);
+  assert.strictEqual(f.visual.objects.visualCreatedVersion, undefined);
+  const t = emit({ visualType: "tables+", title: "T", existingVisualPath: OLD_TABLE });
+  assert.strictEqual(stampOf(t).expr.Literal.Value, "1000D");
+});
+
+check("a Charts+ key write leaves an existing visualCreatedVersion in place unless one is given", () => {
+  const f = emit({ visualType: "charts+", existingVisualPath: OLD_CHART, properties: KEY });
+  assert.strictEqual(f.visual.objects.visualCreatedVersion[0].properties.version.expr.Literal.Value, "'8.2.1.5'");
+  assert.strictEqual(f.visual.objects.proFeaturesSettings[0].properties.show.expr.Literal.Value, "true");
+  const g = emit({ visualType: "charts+", existingVisualPath: OLD_CHART, properties: KEY, installedVersion: "8.3.0.24" });
+  assert.strictEqual(g.visual.objects.visualCreatedVersion[0].properties.version.expr.Literal.Value, "'8.3.0.24'");
+});
+
+check("write_page and write_report stamp a key written on a + visual", () => {
+  const vis = { ...MIN, name: "OldC", visualType: "charts+", installedVersion: "8.3.0.24", properties: KEY };
+  const p = w.writePage({ name: "P", displayName: "P", existingReportPath: LIC_REPORT, visuals: [vis] });
+  const got = JSON.parse(p.files["definition/pages/P/visuals/OldC/visual.json"]).visual.objects;
+  const lit = got.licenseSettings[0].properties.appliedTimestamp.expr.Literal.Value;
+  assert.ok(TS_RE.test(lit) && lit !== "1000D", `old timestamp survived a page write: ${lit}`);
+  assert.ok(got.proFeaturesSettings && got.visualCreatedVersion);
+  const r = w.writeReport({ pages: [{ name: "P", displayName: "P", visuals: [{ ...vis, name: "N" }] }] });
+  const rg = JSON.parse(r.files["definition/pages/P/visuals/N/visual.json"]).visual.objects;
+  assert.ok(rg.licenseSettings[0].properties.appliedTimestamp && rg.proFeaturesSettings);
+});
+
 fs.rmSync(LIC_ROOT, { recursive: true, force: true });
 
 check("Cards customData is refused through the escape hatch and routed to the encoder", () => {
@@ -627,6 +792,18 @@ check("CROSS-CHECK: a fully generated report produces ZERO validator findings", 
   assert.ok(out.rulesRun > 20, `only ${out.rulesRun} rules ran, so the pass means little`);
 });
 
+check("CROSS-CHECK: licensed Tables+ and Charts+ visuals produce ZERO validator findings", () => {
+  const vis = (name, type, extra = {}) => ({
+    name, visualType: type, position: { x: 0, y: 0, width: 400, height: 300 },
+    bindings: { Category: ["Sales.Account"], Values: ["Sales.Value AC"], Plan: ["Sales.Value PL"] },
+    properties: { "licenseSettings.licenseKey": "PLACEHOLDER-NOT-A-KEY" }, ...extra });
+  const r = w.writeReport({ pages: [{ name: "Lic", displayName: "Lic", visuals: [
+    vis("tp", "tables+"), vis("cp", "charts+", { installedVersion: "8.3.0.24" })] }] });
+  const out = srv.validateReport({ projectPath: projectFrom(r.files) });
+  assert.ok(out.ok, out.error);
+  assert.deepStrictEqual(out.findings.map((f) => `${f.code} @ ${f.location}`), []);
+});
+
 // Without this, the pass above could be a pass because the rules cannot fire on a generated shape
 // at all. The same visual with the same properties hand-written the wrong way MUST be caught.
 check("the negative control: the same report written the wrong way IS caught", () => {
@@ -659,6 +836,21 @@ function stripNeverEmit(file) {
     }
     if (!Object.keys(objs).length) delete out.visual.objects;
   }
+  return out;
+}
+/**
+ * The writer stamps a licence key written on Tables+ or Charts+ with an appliedTimestamp (and, on
+ * Charts+, proFeaturesSettings). A source file saved before that existed has neither, so the
+ * regenerated copy is compared without the additions the source never had.
+ */
+function withoutStamp(regenerated, original) {
+  const out = JSON.parse(JSON.stringify(regenerated));
+  const mine = out.visual && out.visual.objects;
+  const had = (original.visual && original.visual.objects) || {};
+  if (mine && mine.licenseSettings && !(had.licenseSettings || [{}])[0].properties?.appliedTimestamp) {
+    for (const e of mine.licenseSettings) if (e.properties) delete e.properties.appliedTimestamp;
+  }
+  if (mine && had.proFeaturesSettings === undefined) delete mine.proFeaturesSettings;
   return out;
 }
 const sortDeep = (v) => Array.isArray(v) ? v.map(sortDeep)
@@ -707,7 +899,7 @@ function roundTrip(label, sources) {
       failures.push(`${rel}: REFUSED — ${String(err.message).split("\n")[0].slice(0, 80)}`);
       continue;
     }
-    if (sameSemantically(stripNeverEmit(original), regenerated)) {
+    if (sameSemantically(stripNeverEmit(original), withoutStamp(regenerated, original))) {
       pass++;
       const t = original.visual.visualType || "";
       const fam = /Tables/i.test(t) ? "Tables" : /Cards/i.test(t) ? "Cards"
@@ -731,7 +923,7 @@ function roundTrip(label, sources) {
         original: Buffer.byteLength(text, "utf8"),
       });
     } else {
-      failures.push(`${rel}: DIFFERS at ${diffPaths(stripNeverEmit(original), regenerated)
+      failures.push(`${rel}: DIFFERS at ${diffPaths(stripNeverEmit(original), withoutStamp(regenerated, original))
         .join(", ") || "(unknown)"}`);
     }
   }

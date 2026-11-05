@@ -411,7 +411,7 @@ const VISUAL_KEYS = new Set(["name", "visualType", "position", "bindings", "titl
   "rawObjects", "tableCalculations", "tableColumns", "addedFormulas", "annotations", "cardInvert",
   "highlights", "cagrArrows", "storageConfig", "categoryScenarios",
   "dataValueLists", "visualContainerObjects", "filterConfig", "queryExtras", "visualExtras",
-  "drillFilterOtherVisuals", "schemaVersion", "existingVisualPath"]);
+  "drillFilterOtherVisuals", "schemaVersion", "existingVisualPath", "installedVersion"]);
 const PAGE_KEYS = new Set(["name", "displayName", "width", "height", "displayOption", "type",
   "visibility", "pageBinding", "visualInteractions", "properties", "filterConfig", "schemaVersion",
   "visuals", "existingReportPath"]);
@@ -428,12 +428,10 @@ function assertKnownKeys(spec, allowed, what) {
 
 // --- licence information on a rewrite ----------------------------------------------------------
 /**
- * Reads the visual.json being replaced and copies its licence groups into `objects`, unchanged.
- * The writer reads the file itself, so nothing depends on a caller copying arrays by hand.
- * Read-only. A missing or unreadable file carries nothing and says so in a warning; it never fails
- * the write.
+ * Reads the visual.json being replaced and returns its `objects`, or null. Read-only. A missing or
+ * unreadable file yields null and says so in a warning; it never fails the write.
  */
-function carryLicence(objects, file, warnings) {
+function readExistingObjects(file, warnings) {
   need(typeof file === "string" && path.isAbsolute(file),
     "existingVisualPath must be the absolute path of the visual.json this call replaces.");
   let found;
@@ -442,11 +440,97 @@ function carryLicence(objects, file, warnings) {
   } catch (e) {
     warnings.push(`No readable visual.json at ${file} (${e.code || "not valid JSON"}), so no `
       + `licence information was carried.`);
-    return;
+    return null;
   }
-  const from = found && found.visual && found.visual.objects;
+  return (found && found.visual && found.visual.objects) || {};
+}
+
+/**
+ * Copies the licence groups of the replaced file into `objects`, unchanged. The writer reads the
+ * file itself, so nothing depends on a caller copying arrays by hand. A group the spec provides
+ * is never overwritten, which also means an existing appliedTimestamp is never carried beside a
+ * key the spec supplied.
+ */
+function carryLicence(objects, from) {
+  if (!from) return;
   for (const group of LICENCE_GROUPS) {
-    if (from && from[group] !== undefined && objects[group] === undefined) objects[group] = from[group];
+    if (from[group] !== undefined && objects[group] === undefined) objects[group] = from[group];
+  }
+}
+
+// --- writing a licence key ---------------------------------------------------------------------
+/**
+ * Tables+ and Charts+ hold the licence key twice, in visual.json and in a per-visual-type store on
+ * the machine, and keep whichever copy has the larger `licenseSettings.appliedTimestamp` (a missing
+ * timestamp counts as 0). In edit mode the machine copy is written back over the file. A key
+ * written alone therefore loses to any older key already stored on the machine, and the visual
+ * stays locked. Writing a key means writing a fresh timestamp with it.
+ *
+ * Charts+ also reads `proFeaturesSettings.show` and `visualCreatedVersion.version`. Which of the two
+ * matters has not been isolated, so both are written. Only these two types are stamped: the
+ * certified Tables, Charts and Cards are not known to read the timestamp, and nothing here changes
+ * what they get.
+ */
+const isTablesPlus = (t = "") => t.startsWith("ZebraBITablesPlus");
+const isChartsPlus = (t = "") => t.startsWith("ZebraBIChartsPlus");
+const VERSION_RE = /^\d+(\.\d+){1,3}$/;
+
+/**
+ * Applied to the licence group the SPEC provided, before any existing file is carried. A group
+ * carried from the replaced file is a carry, not a write, and keeps its own timestamp and gets no
+ * extras. A timestamp or proFeaturesSettings the spec supplies itself is left alone, so a spec
+ * derived from a real file regenerates as it was.
+ */
+function stampLicence(objects, spec, visualType, existing, warnings) {
+  const plus = isTablesPlus(visualType) || isChartsPlus(visualType);
+  const group = objects.licenseSettings;
+  const entry = Array.isArray(group)
+    ? group.find((e) => e && e.properties && e.properties.licenseKey !== undefined) : undefined;
+  const keyWritten = plus && entry !== undefined;
+
+  if (spec.installedVersion !== undefined) {
+    need(typeof spec.installedVersion === "string" && VERSION_RE.test(spec.installedVersion),
+      "installedVersion must be the installed Charts+ version as a dotted string, for example "
+      + "'8.3.0.24' (Format > About shows it).");
+    if (!(keyWritten && isChartsPlus(visualType))) {
+      warnings.push("installedVersion was ignored: it applies only to a Charts+ visual written with "
+        + "a licence key.");
+    }
+  }
+  if (isTablesPlus(visualType) || isChartsPlus(visualType)) {
+    const core = (spec.properties || {})["coreSettings.licenseKey"];
+    if (core !== undefined) {
+      warnings.push("Tables+ and Charts+ do not declare coreSettings.licenseKey, so it has no effect "
+        + "there. The key is read from licenseSettings.licenseKey.");
+    }
+  }
+  if (!keyWritten) return;
+
+  // Cloned, so a spec's own object (rawObjects passes entries through) is never mutated.
+  const stamped = JSON.parse(JSON.stringify(group));
+  const target = stamped[group.indexOf(entry)];
+  if (target.properties.appliedTimestamp === undefined) {
+    target.properties.appliedTimestamp = pbirLiteral(Date.now(), "licenseSettings.appliedTimestamp");
+  }
+  objects.licenseSettings = stamped;
+
+  if (!isChartsPlus(visualType)) return;
+  if (objects.proFeaturesSettings === undefined) {
+    objects.proFeaturesSettings = [{ properties: { show: pbirLiteral(true, "proFeaturesSettings.show") } }];
+  }
+  if (objects.visualCreatedVersion !== undefined) return;
+  // The plugin cannot see which Charts+ build Desktop has registered, and an invented version
+  // could be wrong in a way that matters. Order: the caller's installedVersion, then the value
+  // already in the file being replaced, otherwise left out and said so.
+  if (spec.installedVersion !== undefined) {
+    objects.visualCreatedVersion = [{ properties: {
+      version: pbirLiteral(spec.installedVersion, "visualCreatedVersion.version") } }];
+  } else if (existing && existing.visualCreatedVersion !== undefined) {
+    objects.visualCreatedVersion = existing.visualCreatedVersion;
+  } else {
+    warnings.push("visualCreatedVersion was not written: Charts+ reads it beside the licence key and "
+      + "this writer does not know the installed version. Pass installedVersion (Format > About "
+      + "shows it) or existingVisualPath of a file that already carries one.");
   }
 }
 
@@ -538,9 +622,13 @@ function writeVisual(spec = {}) {
     objects[group] = entries;
   }
 
-  // The licence groups of the visual being replaced, read from that file and carried through
-  // unchanged. Applied last and per group, so a group the spec itself provides wins.
-  if (spec.existingVisualPath !== undefined) carryLicence(objects, spec.existingVisualPath, warnings);
+  // A licence key in the spec is written with a fresh appliedTimestamp (Tables+ and Charts+), then
+  // the licence groups of the visual being replaced are carried through unchanged. Applied last and
+  // per group, so a group the spec itself provides wins and no old timestamp rides on a new key.
+  const existing = spec.existingVisualPath !== undefined
+    ? readExistingObjects(spec.existingVisualPath, warnings) : null;
+  stampLicence(objects, spec, visualType, existing, warnings);
+  carryLicence(objects, existing);
 
   let query;
   // Emitted only when there is something to put in it. A textbox has no `query` key at all, and
