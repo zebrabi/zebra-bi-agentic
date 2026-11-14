@@ -102,9 +102,11 @@ have scenario measures, and whether a date table is marked. If either fails, fix
 Everything else about the report will look fine and be wrong.
 
 **Work on a copy.** The agent rewrites the report layer of the project you point it at, so give it a
-copy, never a live project, and keep that copy out of synced OneDrive or SharePoint folders. Once
-Power BI Desktop saves the report, your licence key is in its files, and sync uploads them to the
-cloud, where anyone the folder is shared with can open them.
+copy, never a live project.
+
+**Starting from a `.pbix`?** In Power BI Desktop, use File > Save as > Power BI project (.pbip). Keep
+the target folder path short, under about 75 characters: Save As fails silently when the deepest path
+in the project passes about 260 characters, and embedded custom visuals add about 150.
 
 **Step two: ask for a report.**
 

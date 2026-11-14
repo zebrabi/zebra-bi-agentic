@@ -148,6 +148,28 @@ rule("dataset-path-does-not-resolve", "a dataset path pointing nowhere", (s) => 
 
 rule("report-has-no-base-theme", "no base theme", (s) => { delete s.reportJson.themeCollection; });
 
+// Desktop writes only `customTheme` on Save As PBIP, and that report opens and renders (field
+// report 2026-10-23, two cold opens). A custom theme without a base theme must stay silent; an
+// empty themeCollection must still fire.
+rule("report-has-no-base-theme", "an empty themeCollection", (s) => { s.reportJson.themeCollection = {}; });
+
+check("a customTheme with no baseTheme is NOT flagged", () => {
+  const root = project((s) => {
+    s.reportJson.themeCollection = { customTheme: { name: "Custom", type: "RegisteredResources" } };
+  });
+  assert.ok(!codes(root).has("report-has-no-base-theme"), "fired on a report with only a customTheme");
+});
+
+check("a customTheme with no name is flagged, at the customTheme", () => {
+  for (const custom of [{}, { type: "RegisteredResources" }, { name: "" }, true]) {
+    const root = project((s) => { s.reportJson.themeCollection = { customTheme: custom }; });
+    const f = srv.validateReport({ projectPath: root }).findings
+      .find((x) => x.code === "report-has-no-base-theme");
+    assert.ok(f, `did not fire on customTheme ${JSON.stringify(custom)}`);
+    assert.ok(/themeCollection\.customTheme\.name/.test(f.location), `location: ${f.location}`);
+  }
+});
+
 // --- looks fine, misleads -------------------------------------------------------------------
 
 // The clean project is a Zebra Table, so the negative control is a Zebra page with no native
@@ -289,11 +311,6 @@ rule("colour-gate", "colours set without style Custom", (s) => {
   } }];
 });
 
-// NOT a variant of the row above -- it is the case that read clean. Cards stores the key under
-// `license`, and some Cards builds carry ONLY that object, so a rule reading `licenseSettings`
-// and nothing else finds no key in a report that has one.
-// Current Cards carries both objects. This is the shape that defeated the stripper: clearing one
-// and re-checking looks clean while the other copy is still on disk.
 // RESTORED 2026-08-05 after being wrongly re-based to 20px the same day. This fixture is not
 // arbitrary: the held catalogue records that a 22pt title in a 40px box makes Power BI draw its own native
 // scrollbar inside the box and clip the text, that it shipped, and that a human found it in a
@@ -406,11 +423,6 @@ silent("action-button-label-needs-state-selector", "an icon button with no label
   BTN([{ properties: { show: W("true") } }]));
 
 
-// The scrubbed report. Desktop leaves both licence objects behind with their other members
-// intact -- `appliedTimestamp`, `validUntil`, `lastLicenseCheck` and `product` all outlive the
-// key. So "the object is present" must not be what fires; only a `licenseKey` that is still
-// there. Without this, widening the rule to two object names would double its false-positive
-// surface on exactly the reports someone has just cleaned.
 // Power BI writes the sort it chose itself and marks it. Nobody asked for an order, so the rule's
 // "rather than the order you asked for" describes no fault. 82 of 82 vendor tables carry this.
 silent("table-ignores-sort-definition", "a Table whose sort is Power BI's own default", (s) => {

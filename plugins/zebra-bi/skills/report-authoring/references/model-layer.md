@@ -281,7 +281,7 @@ Microsoft's own MCP shipping refresh is the current word. Cite the MCP repo if a
 after every cold open (~5s, no human), and when the report is final, have Desktop save once so the
 data persists for the next human who opens it.
 
-### ⚠️ And on a PQ-backed model, `file.reload/v1` is unavailable — budget cold restarts
+### ⚠️ And on a PQ-backed model, `file.reload/v1` was unavailable on Desktop 2.156 — budget cold restarts
 
 Reproduced twice on Desktop 2.156.951.0, on two different projects: every `file.reload/v1` against a
 model whose fact table is an **M/Power Query partition** raised a **modal**:
@@ -300,6 +300,12 @@ Two things make this worse than a plain failure:
 Reload-as-validator was verified on a model of **calculated
 tables and measures only**. It bounds it. **On a PQ-backed model, treat reload as unavailable, batch
 your edits, and budget a cold restart (your own first open's time, plus the refresh) per model change.**
+
+**That is measured on Desktop 2.156 and may not hold on every build.** One observation on Desktop 2.159.883.0
+went the other way: a report-only reload (`reloadModelDefinition: false`) on a PQ-backed model that also
+carried a `cultures/` file returned success in 2.5 s with no modal and the edit applied. That bounds the
+2.156 result without refuting it. On 2.159 try a report-only reload first and look for a modal either
+way, and keep the cold-restart budget for model changes until a second observation says otherwise.
 
 **And screenshot the screen after any state-changing bridge call**, not only when something already
 looks wrong. A modal wedges the bridge, and the CLI can neither see nor dismiss it; a return code is not evidence that it didn't happen.

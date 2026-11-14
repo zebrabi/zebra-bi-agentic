@@ -7,6 +7,50 @@ This file starts at the first public release. Versions before it exist in the gi
 never published — the repository was private, with no tags and no releases — so listing them as
 though they shipped would misrepresent what anyone could have installed.
 
+## 0.3.2 — 2026-11-04
+
+- The hand-over now leads with the one step a changed model needs before it is opened again:
+  refresh and save, or the visuals open empty.
+- Zebra BI visuals store licence information in each visual's `objects` (`licenseSettings`; Cards
+  also `license`) and in Power BI Desktop's local storage. That is normal, and the plugin no longer
+  asks anyone to remove it: removing it can make a visual render unlicensed on a machine whose local
+  storage does not hold the entitlement.
+- Activating from a key you provide now ends after one render, with the key left in place.
+- The report writers treat the licence groups like any other object group: a spec may carry them.
+- `write_visual` takes `existingVisualPath`, and `write_page` and `write_report` take
+  `existingReportPath`. Given the path of the file or `.Report` directory a call replaces, the
+  writer reads each existing `visual.json` itself and carries its licence groups through unchanged,
+  unless the spec provides that group. A path with nothing to read carries nothing and says so in a
+  warning. The tool descriptions and the authoring skill say to pass the path whenever a write
+  replaces existing files.
+- `SECURITY.md` and the setup skill say this in a short note instead of a procedure.
+- `INSTALL.md` names the case where `claude plugin marketplace add` fails with `git` not found or in
+  an unsafe location: Git is installed but not on PATH (on Windows add `C:\Program Files\Git\cmd`),
+  and the `not found in marketplace` error that follows is the stale cache, cleared by removing and
+  re-adding the marketplace.
+- `multiline-measure-dax-on-equals-line` no longer fires on a complete one-line
+  `measure X = VAR ... RETURN ...`, which Desktop opens and renders. A VAR with no RETURN on the
+  line, a RETURN with its body on the next line, a one-line form with an open parenthesis, and a
+  "RETURN" that is only part of a bracketed name or a comment are still reported.
+- `report-has-no-base-theme` accepts a report that declares only a named `customTheme`, which is
+  what Desktop writes on Save As PBIP. A report with neither theme, or a `customTheme` with no name,
+  is still reported, and the pre-flight script in `references/preflight.md` checks the same thing.
+- Starting from a `.pbix`: the skill and README say to use File > Save as > Power BI project
+  (.pbip) onto a copy, with a short target folder (under about 75 characters), because Save As
+  fails silently when the deepest path passes about 260 characters.
+- `references/verify-loop.md` lists two Desktop prompts that block automation and are not faults:
+  the Bing map "going away" dialog on open, and the save-on-close prompt on an unedited project.
+- Statements that depended on a Desktop version now say so: reload on a Power Query model or with a
+  `cultures/` file is measured on 2.156 (one 2.159 observation reloaded successfully), the bridge
+  manifest on 2.159 also lists `report.snapshot.capture/v2`, and a Desktop save can migrate
+  Tables+ and Charts+ to a newer build (Tables+ 8.4.0 seen on 2.159).
+- Writing a licence key on Tables+ or Charts+ now also writes a fresh `licenseSettings.appliedTimestamp`
+  (these visuals keep the key in the file and in Desktop's local storage and use the copy with the
+  larger timestamp, so a key without one stayed locked on a machine holding an older key), and Charts+
+  also gets `proFeaturesSettings` and, from `installedVersion` or the replaced file,
+  `visualCreatedVersion`. The writers do this; the setup and authoring references describe the payload
+  and say to check Expires in Format > About, not "Licensed to".
+
 ## 0.3.1 (2026-10-07)
 
 Documentation and safety wording. No change to the MCP server or the rule catalogue.

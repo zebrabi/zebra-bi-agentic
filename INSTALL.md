@@ -31,9 +31,14 @@ Restart Claude Code. Then run `/zebra-bi:setup-doctor`.
 This is the only route where the checker configures itself — installing the plugin registers the
 MCP server, so there is no config file to edit.
 
-**If the first command fails**, it is nearly always the network rather than the plugin. Run
+**If the first command fails**, it is usually the network rather than the plugin. Run
 `git clone https://github.com/zebrabi/zebra-bi-agentic` by hand; the error you get there is the real
 one. A corporate proxy that rewrites certificates is the usual culprit.
+
+If the error says `git` was not found or is in an unsafe location, Git is installed but not on
+Claude Code's PATH (on Windows, add `C:\Program Files\Git\cmd`, then restart the terminal). A later
+`Plugin "zebra-bi" not found in marketplace` error comes from the stale cache that failure left:
+remove the marketplace and add it again.
 
 ## 1b. GitHub Copilot CLI
 

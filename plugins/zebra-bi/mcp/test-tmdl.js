@@ -251,6 +251,53 @@ check("a VAR measure starting DAX on the = line is caught", () => {
     .has("multiline-measure-dax-on-equals-line"), "did not fire on a VAR/RETURN measure");
 });
 
+// A complete one-line `VAR ... RETURN ...` measure opens and renders in Desktop (field report
+// 2026-10-21, two opens), so it must stay silent. Both controls below: the same line with an open
+// paren still continues below and still fires, and so does a VAR whose RETURN is only in a comment.
+check("a one-line VAR ... RETURN measure is NOT flagged", () => {
+  assert.ok(!codes(project({ fact:
+    "table F\n\tmeasure X = VAR a = [Revenue] VAR b = [COGS] RETURN DIVIDE(a - b, a)\n"
+    + "\t\tformatString: 0.0%\n\tcolumn Amount\n\t\tdataType: double\n" }))
+    .has("multiline-measure-dax-on-equals-line"), "fired on a complete one-line VAR/RETURN");
+});
+
+check("a one-line VAR ... RETURN with an open paren is still caught", () => {
+  assert.ok(codes(project({ fact:
+    "table F\n\tmeasure X = VAR a = 1 RETURN CALCULATE(\n\t\t\t[Revenue], Dates[Year] = 2024)\n"
+    + "\tcolumn Amount\n\t\tdataType: double\n" }))
+    .has("multiline-measure-dax-on-equals-line"), "an open paren after RETURN was missed");
+});
+
+// The RETURN keyword itself, not a word that contains it or a name that spells it. Each of these
+// has no real RETURN on the = line, so each continues below and must fire.
+for (const [name, line, body] of [
+  ["a trailing RETURN with its body on the next line", "VAR a = [Revenue] RETURN", "\t\ta\n"],
+  ["RETURN inside a bracketed measure name", "VAR r = [Return on Equity]", "\t\tRETURN r\n"],
+  ["RETURN inside a bracketed column name", "VAR r = SUM(Sales[Return])", "\t\tRETURN r\n"],
+  ["RETURN inside a quoted table name", "VAR r = SUM('Return Items'[Qty])", "\t\tRETURN r\n"],
+  ["RETURN inside a block comment", "VAR a = [Revenue] /* RETURN */", "\t\tRETURN a\n"],
+]) {
+  check(`a VAR with ${name} is still caught`, () => {
+    assert.ok(codes(project({ fact: `table F\n\tmeasure X = ${line}\n${body}`
+      + "\tcolumn Amount\n\t\tdataType: double\n" }))
+      .has("multiline-measure-dax-on-equals-line"), `missed: ${line}`);
+  });
+}
+
+check("a complete one-line VAR ... RETURN with bracketed names and a block comment is NOT flagged", () => {
+  assert.ok(!codes(project({ fact:
+    "table F\n\tmeasure X = VAR r = [Return on Equity] /* note */ RETURN r * SUM(Sales[Return])\n"
+    + "\t\tformatString: 0.0%\n\tcolumn Amount\n\t\tdataType: double\n" }))
+    .has("multiline-measure-dax-on-equals-line"), "fired on a complete one-line VAR/RETURN");
+});
+
+check("a VAR whose RETURN is only in a comment is still caught", () => {
+  assert.ok(codes(project({ fact:
+    "table F\n\tmeasure X = VAR a = [Revenue] -- RETURN below\n\t\tRETURN a\n"
+    + "\tcolumn Amount\n\t\tdataType: double\n" }))
+    .has("multiline-measure-dax-on-equals-line"), "a RETURN in a comment hid the continuation");
+});
+
 // The negative control the VAR clause needs, and the one that killed an earlier draft: ``` opens
 // the LEGAL fenced form, whose body belongs on the lines below. A draft that judged continuation
 // by "the next line does not look like a property" reported 11 of these across the vendor

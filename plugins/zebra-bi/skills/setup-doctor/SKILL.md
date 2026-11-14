@@ -90,7 +90,7 @@ Answered by a render: an unlicensed Zebra visual shows a **Free** footer with *"
 | State | What to do |
 |---|---|
 | Licensed | Carry on |
-| Free, user has a key | Write it into every Zebra visual, render once, strip — `references/licence-and-trial.md` |
+| Free, user has a key | Write into every Zebra visual, render once, keep it — `references/licence-and-trial.md` |
 | Free, no key | Offer the trial (UTM link; EULA and privacy links first) — same reference |
 
 Never tick a consent box or author a key the user did not give you.

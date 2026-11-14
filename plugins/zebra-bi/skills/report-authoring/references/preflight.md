@@ -111,11 +111,11 @@ if ($rep) {
     }
   }
 
-  # 5. A base theme, or the report renders NOTHING with no error
+  # 5. A base theme or a custom theme (Desktop writes only a customTheme on Save As PBIP and that opens fine), or the report renders NOTHING with no error
   $reportJson = Join-Path $rep.FullName 'definition\report.json'
   if (Test-Path $reportJson) {
     $rj = [System.IO.File]::ReadAllText($reportJson, [Text.Encoding]::UTF8) | ConvertFrom-Json
-    if (-not $rj.themeCollection.baseTheme) { $issues += "NO BASE THEME - the report will render blank with no page tabs" }
+    if (-not $rj.themeCollection.baseTheme -and -not $rj.themeCollection.customTheme.name) { $issues += "NO THEME - the report will render blank with no page tabs" }
     foreach ($pkg in $rj.resourcePackages) {
       # SharedResources are Desktop built-ins (e.g. baseTheme CY23SU08) - no file on disk is correct.
       # Verified by render: a report declaring one with no file paints normally.
@@ -238,12 +238,12 @@ if ($sm) {
     if ($first -notmatch '^database(\s|$)') { $issues += "DATABASE LINE: database.tmdl must start with 'database' (found '$first')" }
   }
 
-  # Reported, not flagged: a cultures/ file is legitimate TMDL that cold-opens perfectly and
-  # silently kills `file.reload/v1`, i.e. the whole one-second loop. Knowing costs nothing; not
-  # knowing cost seven cold opens.
+  # Reported, not flagged: a cultures/ file is legitimate TMDL that cold-opens perfectly and, on
+  # Desktop 2.156, silently killed `file.reload/v1`, i.e. the whole one-second loop (one 2.159
+  # observation reloaded fine). Knowing costs nothing; not knowing cost seven cold opens.
   $cul = Join-Path $sm.FullName 'definition\cultures'
   if (Test-Path $cul) {
-    "NOTE: a cultures/ file is present - file.reload/v1 will not work on this project (it cold-opens normally). Budget a cold open per iteration, or remove it if nothing needs it."
+    "NOTE: a cultures/ file is present - on Desktop 2.156 file.reload/v1 did not work on such a project (it cold-opens normally; one 2.159 observation reloaded fine). Try a report-only reload, and if it fails budget a cold open per iteration or remove the file if nothing needs it."
   }
 
   # Reported, not flagged. Every shipped template sits at 1600/1601 and every one of them opens,

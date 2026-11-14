@@ -243,6 +243,46 @@ function rpc(messages) {
     assert.ok(/aggregatesOtherRows/.test(p.error), `unhelpful refusal: ${p.error}`);
   });
 
+  // Licence information over the wire. The writer reads the existing visual.json itself from the
+  // .Report path it is given, so the caller never copies licence arrays by hand.
+  const licRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zbi-srv-licence-"));
+  const licReport = path.join(licRoot, "Sales.Report");
+  const licDir = path.join(licReport, "definition", "pages", "P", "visuals", "V1");
+  fs.mkdirSync(licDir, { recursive: true });
+  const kept = [{ properties: { licenseKey: { expr: { Literal: { Value: "'PLACEHOLDER-NOT-A-KEY'" } } } } }];
+  fs.writeFileSync(path.join(licDir, "visual.json"),
+    JSON.stringify({ name: "V1", visual: { visualType: "zebraBiCards", objects: { licenseSettings: kept } } }));
+  const vis = { name: "V1", visualType: "tables", position: { x: 0, y: 0, width: 1, height: 1 } };
+  const lic = await rpc([
+    { jsonrpc: "2.0", id: 1, method: "tools/list" },
+    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "write_page",
+      arguments: { name: "P", displayName: "P", existingReportPath: licReport, visuals: [vis] } } },
+    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "write_visual",
+      arguments: { ...vis, existingVisualPath: path.join(licDir, "visual.json") } } },
+  ]);
+  fs.rmSync(licRoot, { recursive: true, force: true });
+
+  check("the writers advertise the existing-file paths, and no hand-copied licence field", () => {
+    const tools = lic.find((x) => x.id === 1).result.tools;
+    const props = (n) => tools.find((t) => t.name === n).inputSchema.properties;
+    assert.ok(props("write_visual").existingVisualPath, "write_visual has no existingVisualPath");
+    assert.ok(props("write_page").existingReportPath, "write_page has no existingReportPath");
+    assert.ok(props("write_report").existingReportPath, "write_report has no existingReportPath");
+    for (const n of ["write_visual", "write_page", "write_report"]) {
+      assert.ok(/existing(Visual|Report)Path/.test(tools.find((t) => t.name === n).description),
+        `${n}'s description does not say to pass the existing path`);
+    }
+    assert.ok(!/existingLicence/.test(JSON.stringify(tools)), "existingLicence is still advertised");
+  });
+
+  check("write_page and write_visual carry licence information from the existing files over stdio", () => {
+    const page = JSON.parse(lic.find((x) => x.id === 2).result.content[0].text);
+    assert.deepStrictEqual(JSON.parse(page.files["definition/pages/P/visuals/V1/visual.json"])
+      .visual.objects.licenseSettings, kept);
+    const one = JSON.parse(lic.find((x) => x.id === 3).result.content[0].text);
+    assert.deepStrictEqual(JSON.parse(one.content).visual.objects.licenseSettings, kept);
+  });
+
   for (const [s, n, d] of results) console.log(`  ${s}  ${n}${d ? "  <- " + d : ""}`);
   const failed = results.filter((r) => r[0] === "FAIL").length;
   console.log(`\n${results.length - failed}/${results.length} passed`);

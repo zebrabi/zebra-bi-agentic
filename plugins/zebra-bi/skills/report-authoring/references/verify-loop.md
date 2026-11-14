@@ -71,6 +71,13 @@ board pack:
   Check **after** the title has settled to the project name, not during the load — the title matches
   *with* the dialog up, so you lose nothing, and you skip the whole splash window.
 
+  **Two prompts that are not faults but stop automation until someone handles them.** On open,
+  Desktop can show *"Bing map visuals are going away"* with an *Upgrade to Azure Maps* button and a
+  disabled owner window, on any report that holds a Bing map (seen on two reports): close it without
+  upgrading, then carry on. On close, Desktop can ask *"Do you want to save your changes?"* on a PBIP
+  nobody edited (seen once): if the agent changed nothing, answer Don't save, and never let a
+  graceful close wait on it.
+
   **Read the dialog through UI Automation first; photograph it only when that returns nothing.**
   The report-definition load error is a WebView (`desktopDialogHost.html`), and a `FindAll`
   over the **dialog's own handle** returns the full message as text in about a second — read from
@@ -169,7 +176,8 @@ Desktop through secure local APIs", **on by default** since the June 2026 releas
   `System.IO.Pipes.NamedPipeClientStream`. (Note `ReadTimeout` is unsupported on this stream.)
 - **Method names — call `bridge.manifest`.** It returns every supported method with its params and
   result schema. `bridge.manifest` is the supported discovery path and was confirmed on
-  Desktop 2.156.951.0 returning exactly the three methods below.
+  Desktop 2.156.951.0 returning the three methods below; 2.159.883.0 also lists `report.snapshot.capture/v2`
+  (below). Every method's params wrap its arguments in an `args` object.
 
   | method | params | result |
   |---|---|---|
@@ -178,7 +186,11 @@ Desktop through secure local APIs", **on by default** since the June 2026 releas
   | `file.reload/v1` | `{reloadModelDefinition: bool}` | **see below** |
   | `report.snapshot.capture/v1` | `{pageId, scale}` — **both required**, whatever older notes say | PNG as base64 — **broken on 2.156.951.0**. Use `PrintWindow` instead. |
 
-  **Do not spend time trying to call the snapshot method correctly.** It throws
+  On 2.159.883.0 the manifest also lists `report.snapshot.capture/v2`, which adds an optional `region`
+  (`{x, y, width, height}` in PBIR page units). It was read from the manifest and not called, so whether
+  it works where v1 failed is unmeasured.
+
+  **Do not spend time trying to call the v1 snapshot method correctly (measured on 2.156).** It throws
   `System.NullReferenceException` in `ReportSnapshotHandler.ExecuteAsync`, and the control that
   settles it is this: **a deliberately bogus `pageId` throws the identical exception.** A handler
   that fails the same way for a page that exists and one that does not has not resolved the page at

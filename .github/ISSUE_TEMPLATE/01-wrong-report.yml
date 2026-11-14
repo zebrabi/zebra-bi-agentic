@@ -9,8 +9,7 @@ body:
         report can validate clean and still be wrong — and every one of those we hear about
         becomes a rule that catches the next one.
 
-        **Before you attach anything:** saving in Power BI Desktop writes your Zebra BI licence
-        key into the report. Strip it or send a screenshot instead. Never paste a key here.
+        This is a public issue. Prefer a screenshot, and never paste a licence key here.
   - type: textarea
     id: what-was-wrong
     attributes:

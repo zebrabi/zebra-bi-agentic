@@ -421,7 +421,7 @@
       "id": "report-has-no-base-theme",
       "severity": "blank",
       "check": "report-requires-a-base-theme",
-      "message": "A report with no base theme renders nothing at all: no visuals, no page tabs, and no error saying\nwhy. Every report needs one declared.",
+      "message": "A report with no theme declared renders nothing at all: no visuals, no page tabs, and no error saying\nwhy. Every report needs a base theme or a custom theme; Desktop writes only a custom theme on Save As\nPBIP, and that opens and renders.",
       "source": "validator",
       "held": true
     },
