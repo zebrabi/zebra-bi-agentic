@@ -1,3 +1,12 @@
+> **This plugin has moved.** Power BI report authoring is now part of the Zebra BI plugin at [zebrabi/zebra-bi](https://github.com/zebrabi/zebra-bi), from version 1.1.0. Install it from there to get current releases:
+>
+> ```
+> /plugin marketplace add zebrabi/zebra-bi
+> /plugin install zebra-bi@zebrabi
+> ```
+>
+> This repository stays available for reference and receives no further releases. Please open new issues in the [new repository](https://github.com/zebrabi/zebra-bi/issues).
+
 # Zebra BI agentic
 
 Describe the report you want. Get a Power BI report built with Zebra BI visuals.
