@@ -5,6 +5,8 @@
 > /plugin install zebra-bi@zebrabi
 > ```
 >
+> If you installed the plugin from this repository, remove that copy first with `/plugin uninstall zebra-bi@zebra-bi-collection`.
+>
 > This repository stays available for reference and receives no further releases. Please open new issues in the [new repository](https://github.com/zebrabi/zebra-bi/issues).
 
 # Zebra BI agentic
